@@ -73,7 +73,7 @@ function prepareData(data: object) {
   return result;
 }
 
-function sort(array: object[], property: string) {
+function sort(array, property: string) {
   return array.sort((a: object, b: object) =>
     a[property] > b[property] ? 1 : -1
   );

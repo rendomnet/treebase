@@ -1,10 +1,10 @@
 {
   "name": "treebase",
-  "version": "1.0.2",
-  "description": "tree structure",
+  "version": "1.0.3",
+  "description": "Tree data structure manager",
   "main": "dist/index.js",
   "scripts": {
-    "compile": "tsc",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
