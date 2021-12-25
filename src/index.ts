@@ -51,11 +51,11 @@ function buildFlat(list: childType[], result: childType[] = []): childType[] {
   return result;
 }
 
-function insert(arr: object[], index: number, val: any): object[] {
-  return index >= arr.length
-    ? arr.concat(val)
-    : arr.reduce((prev, x, i) => prev.concat(i === index ? [val, x] : x), []);
-}
+export const insert = <T>(arr: T[], index: number, newItem: T): T[] => [
+  ...arr.slice(0, index),
+  newItem,
+  ...arr.slice(index),
+];
 
 function flatten(data: object) {
   return Object.keys(data).map((id) => ({
@@ -250,7 +250,7 @@ class TreeBase {
     return this.getData();
   }
 
-  getDirectChildrens(id: idType) {
+  getDirectChildrens(id: idType): childListType {
     return this.flatten().filter((item) => item.pid === id);
   }
 

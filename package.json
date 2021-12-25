@@ -2,8 +2,9 @@
   "name": "treebase",
   "version": "1.0.2",
   "description": "tree structure",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "scripts": {
+    "compile": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -21,5 +22,8 @@
   "homepage": "https://github.com/rendomnet/treebase#readme",
   "dependencies": {
     "nanoid": "^3.1.30"
+  },
+  "devDependencies": {
+    "typescript": "^4.5.4"
   }
 }
