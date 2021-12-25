@@ -1,6 +1,6 @@
 {
   "name": "treebase",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "tree structure",
   "main": "index.ts",
   "scripts": {

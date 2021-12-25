@@ -132,7 +132,7 @@ class TreeBase {
   }
 
   getChildren(id: idType) {
-    buildTree(this.flatten(), id);
+    return buildTree(this.flatten(), id);
   }
 
   reindexChildrens(pid: idType, removeId?: idType, addChild?: childType) {
