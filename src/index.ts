@@ -129,10 +129,12 @@ class TreeBase {
 
     let result: idType[] = [];
     let maxLength = 0;
-    while (item && item.pid !== rootId && maxLength < 10) {
+
+    while (item && item.pid && maxLength < 10) {
       result.push(item.pid);
-      maxLength += 1;
+      if (item.pid === rootId) break;
       item = this.data[item.pid];
+      maxLength += 1;
     }
 
     return result;
