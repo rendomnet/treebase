@@ -1,6 +1,6 @@
 {
   "name": "treebase",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Tree data structure manager",
   "main": "dist/index.js",
   "scripts": {

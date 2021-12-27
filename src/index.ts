@@ -124,6 +124,20 @@ class TreeBase {
     return result;
   }
 
+  getParents(id: idType, rootId: idType = "root") {
+    let item = this.data[id];
+
+    let result = [];
+    let maxLength = 0;
+    while (item && item.pid !== rootId && maxLength < 10) {
+      result.push(item.pid);
+      maxLength += 1;
+      item = this.data[item.pid];
+    }
+
+    return result;
+  }
+
   generateId(): string {
     const newId = nanoid(5);
     if (this.data[newId]) return this.generateId();
