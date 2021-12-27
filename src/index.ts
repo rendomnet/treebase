@@ -124,7 +124,7 @@ class TreeBase {
     return result;
   }
 
-  getParents(id: idType, rootId: idType = "root") {
+  getParents(id: idType, rootId: idType = "root"): idType[] {
     let item = this.data[id];
 
     let result = [];
