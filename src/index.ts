@@ -127,7 +127,7 @@ class TreeBase {
   getParents(id: idType, rootId: idType = "root"): idType[] {
     let item = this.data[id];
 
-    let result = [];
+    let result: idType[] = [];
     let maxLength = 0;
     while (item && item.pid !== rootId && maxLength < 10) {
       result.push(item.pid);
