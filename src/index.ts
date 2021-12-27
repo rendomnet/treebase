@@ -132,8 +132,8 @@ class TreeBase {
     let maxLength = 0;
 
     while (item && item.pid && maxLength < 10) {
-      result.push(item.pid);
       if (item.pid === rootId) break;
+      result.push(item.pid);
       item = this.data[item.pid];
       maxLength += 1;
     }
