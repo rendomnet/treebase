@@ -124,6 +124,7 @@ class TreeBase {
     return result;
   }
 
+  // Get list of all item parents
   getParents(id: idType, rootId: idType = "root"): idType[] {
     let item = this.data[id];
 
