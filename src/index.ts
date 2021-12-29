@@ -14,43 +14,6 @@ type childType = {
   children?: childListType;
 };
 
-function buildTree(data: childListType, rootId: string): childListType {
-  const result = data.reduce((o, item) => {
-    const { id, pid } = item;
-
-    o[id] = o[id] ? { ...o[id], ...item } : { ...item, id, pid };
-
-    o[pid] = o[pid] || {
-      ...(o[pid] && o[pid]),
-      ...(pid && { id: pid }),
-      ...(o[pid]?.pid ? { pid: o[pid]?.pid } : { pid: "root" }),
-    };
-
-    if (o[pid]) {
-      o[pid].children = o[pid].children || [];
-
-      if (o[id].index !== undefined) {
-        o[pid].children[o[id].index] = o[id];
-      } else {
-        o[pid].children.push(o[id]);
-      }
-    }
-    return o;
-  }, {} as TreeDataType);
-
-  if (result?.[rootId]?.children) return result[rootId].children;
-  return [];
-}
-
-function buildFlat(list: childType[], result: childType[] = []): childType[] {
-  for (const item of list) {
-    const { children, ...rest } = item;
-    result.push(rest);
-    if (children) buildFlat(children, result);
-  }
-  return result;
-}
-
 export const insert = <T>(arr: T[], index: number, newItem: T): T[] => [
   ...arr.slice(0, index),
   newItem,
@@ -79,11 +42,55 @@ function sort(array, property: string) {
   );
 }
 
+// TREEBASE
 class TreeBase {
   data: any;
+  options: any;
 
   constructor(props: any) {
-    this.data = { ...props };
+    this.data = { ...props.data };
+    this.options = {
+      pid: "pid",
+      children: "children",
+      ...props.options,
+    };
+  }
+
+  buildTree(data: childListType, rootId: string): childListType {
+    const result = data.reduce((o, item) => {
+      const { id, pid } = item;
+
+      o[id] = o[id] ? { ...o[id], ...item } : { ...item, id, pid };
+
+      o[pid] = o[pid] || {
+        ...(o[pid] && o[pid]),
+        ...(pid && { id: pid }),
+        ...(o[pid]?.pid ? { pid: o[pid]?.pid } : { pid: "root" }),
+      };
+
+      if (o[pid]) {
+        o[pid].children = o[pid].children || [];
+
+        if (o[id].index !== undefined) {
+          o[pid].children[o[id].index] = o[id];
+        } else {
+          o[pid].children.push(o[id]);
+        }
+      }
+      return o;
+    }, {} as TreeDataType);
+
+    if (result?.[rootId]?.children) return result[rootId].children;
+    return [];
+  }
+
+  buildFlat(list: childType[], result: childType[] = []): childType[] {
+    for (const item of list) {
+      const { children, ...rest } = item;
+      result.push(rest);
+      if (children) this.buildFlat(children, result);
+    }
+    return result;
   }
 
   flatten(): childListType {
@@ -91,7 +98,7 @@ class TreeBase {
   }
 
   getTree(id = "root"): childListType {
-    return buildTree(this.flatten(), id);
+    return this.buildTree(this.flatten(), id);
   }
 
   getData() {
@@ -99,7 +106,11 @@ class TreeBase {
   }
 
   getList(id: idType) {
-    return buildFlat(this.getTree(id));
+    return this.buildFlat(this.getTree(id));
+  }
+
+  listToData(list: childListType) {
+    return this.buildFlat(list);
   }
 
   haveChildren(id: idType) {
@@ -149,7 +160,7 @@ class TreeBase {
   }
 
   getChildren(id: idType) {
-    return buildTree(this.flatten(), id);
+    return this.buildTree(this.flatten(), id);
   }
 
   reindexChildrens(pid: idType, removeId?: idType, addChild?: childType) {
