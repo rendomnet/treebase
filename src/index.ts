@@ -195,10 +195,9 @@ class TreeBase {
   }
 
   /**
-   * Get object with nested structure
-   * @param data -
-   * @param rootId
-   * @returns
+   * Get tree of item
+   * @param options - Parameters
+   * @returns tree
    */
   getTree(options: { rootId: string; keepIndex: boolean }): childTreeType {
     const { rootId = "root", keepIndex = true } = options;
@@ -219,7 +218,7 @@ class TreeBase {
       if (o[pid]) {
         o[pid].children = o[pid].children || [];
 
-        if (o[id].index !== undefined) {
+        if (keepIndex && o[id].index !== undefined) {
           o[pid].children[o[id].index] = o[id];
         } else {
           o[pid].children.push(o[id]);
