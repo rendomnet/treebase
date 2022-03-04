@@ -5,6 +5,8 @@ interface DataType {
 }
 
 type childListType = childType[];
+type childTreeType = childType[];
+
 type idType = string;
 
 type childType = {
@@ -39,7 +41,7 @@ function sort(array, property: string) {
 
 /**
  * Create data object from tree structured item array
- * @param list - tree structured item array
+ * @param tree - tree structured item array
  * @param result - initial data object (default is empty)
  * @returns treebase data
  */
@@ -60,7 +62,7 @@ function dataFromTree(
     if (item.id) {
       result[item.id] = { ...(result[item.id] || {}), ...item };
     }
-    if (children) this.dataFromTree(children, result);
+    if (children) dataFromTree(children, result, options);
   }
   return result;
 }
@@ -93,7 +95,11 @@ class TreeBase {
     );
   }
 
-  populate(list) {
+  /**
+   * Update data from list items
+   * @param list - list items
+   */
+  updateDataWith(list: childListType) {
     for (const [index, item] of list.entries()) {
       this.data[item.id] = { ...item, index };
     }
@@ -162,6 +168,11 @@ class TreeBase {
     );
   }
 
+  /**
+   * Get all childrens in flat list
+   * @param id - item id
+   * @returns
+   */
   getAllChildren(id: idType): childType[] {
     let parents = Object.keys(this.data).reduce((result, id) => {
       let item = this.data[id];
@@ -189,10 +200,13 @@ class TreeBase {
    * @param rootId
    * @returns
    */
-  getTree(rootId: string = "root"): childListType {
-    const result = Object.entries(this.data).reduce((o, itemData) => {
-      const [id, item] = itemData;
-      const { [this.options.pid]: pid } = item;
+  getTree(options: { rootId: string; keepIndex: boolean }): childTreeType {
+    const { rootId = "root", keepIndex = true } = options;
+    let o = {};
+    for (const id in this.data) {
+      const item = this.data[id];
+
+      const { pid } = item;
 
       o[id] = o[id] ? { ...o[id], ...item } : { ...item, id, pid };
 
@@ -211,15 +225,10 @@ class TreeBase {
           o[pid].children.push(o[id]);
         }
       }
-      return o;
-    }, {} as DataType);
+    }
 
-    if (result?.[rootId]?.children) return result[rootId].children;
+    if (o?.[rootId]?.children) return o[rootId].children;
     return [];
-  }
-
-  getList(id: idType) {
-    return this.listFromTree(this.getTree(id));
   }
 
   // Methods
@@ -227,23 +236,6 @@ class TreeBase {
   haveChildren(id: idType) {
     if (this.getDirectChildrens(id)?.length > 0) return true;
     return false;
-  }
-
-  isDeepParent(id: idType, pid: idType) {
-    let item = this.data[id];
-
-    let result = false;
-    let maxLength = 0;
-    while (item && item.pid !== "root" && maxLength < 10) {
-      if (item.pid === pid) {
-        result = true;
-        break;
-      }
-      maxLength += 1;
-      item = this.data[item.pid];
-    }
-
-    return result;
   }
 
   /**
@@ -269,12 +261,14 @@ class TreeBase {
   }
 
   /**
-   * Get all nested childrens of parent
-   * @param id - parent id
+   * Is deep parent of item
+   * @param id - item
+   * @param pid - parent
    * @returns
    */
-  getChildren(id: idType) {
-    return this.getTree(id);
+  isDeepParent(id: idType, pid: idType) {
+    const parents = this.getParents(id);
+    return parents.includes(pid);
   }
 
   /**
@@ -284,7 +278,7 @@ class TreeBase {
    * @param addChild
    * @returns
    */
-  reindexChildrens(pid: idType, removeId?: idType, addChild?: childType) {
+  reindexTree(pid: idType, removeId?: idType, addChild?: childType) {
     // Reindex siblings
     let childrens = this.getDirectChildrens(pid);
 
@@ -304,7 +298,7 @@ class TreeBase {
     }
 
     // Re-index
-    this.populate(childrens);
+    this.updateDataWith(childrens);
 
     return this.data;
   }
@@ -333,7 +327,7 @@ class TreeBase {
       index,
     };
 
-    this.reindexChildrens(pid, undefined, child);
+    this.reindexTree(pid, undefined, child);
 
     return this.data;
   }
@@ -347,9 +341,9 @@ class TreeBase {
   removeChild(id: idType, childrenBehavior?: "save" | "orphan" | undefined) {
     const { pid } = this.data[id];
 
-    // Delete children
+    // Delete item childrens
     if (!childrenBehavior) {
-      for (const item of this.getList(id)) {
+      for (const item of this.getAllChildren(id)) {
         delete this.data[item.id];
       }
     } else if (childrenBehavior === "orphan") {
@@ -365,13 +359,13 @@ class TreeBase {
         this.data[item.id].pid = "orphaned";
       }
 
-      this.reindexChildrens("orphaned");
+      this.reindexTree("orphaned");
     }
 
     delete this.data[id];
 
     // Reindex siblings
-    this.reindexChildrens(pid);
+    this.reindexTree(pid);
 
     return this.data;
   }
@@ -413,7 +407,7 @@ class TreeBase {
       });
     } else {
       // Reindex siblings
-      this.reindexChildrens(child.pid, id, { ...child, index: newIndex });
+      this.reindexTree(child.pid, id, { ...child, index: newIndex });
     }
     return this.data;
   }
