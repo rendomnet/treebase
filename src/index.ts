@@ -182,7 +182,7 @@ class TreeBase {
       // If isDir is exist
       (function recurFind(idList: idType[]) {
         for (const id of idList) {
-          let direct = this.getDirectChildrens(pid);
+          let direct = this.getDirectChildrens(id);
           result = [...direct];
           // Find all folders of direct childs
           let innerFolders: childType[] = direct.map((item: childType) =>
