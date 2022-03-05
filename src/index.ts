@@ -180,7 +180,7 @@ class TreeBase {
 
     if (this.options.isDir) {
       // If isDir is exist
-      (function recurFind(idList: idType[]) {
+      function recurFind(idList: idType[]) {
         for (const id of idList) {
           let direct = this.getDirectChildrens(id);
           result = [...direct];
@@ -191,7 +191,8 @@ class TreeBase {
           let innerIds = innerFolders.map((item) => item.id);
           recurFind(innerIds);
         }
-      })([pid]);
+      }
+      recurFind([pid]);
     } else {
       // If isDir func not exist check manualy
       for (const id in this.data) {
