@@ -184,13 +184,13 @@ class TreeBase {
       function recurFind(idList: idType[]) {
         for (const id of idList) {
           let direct = that.getDirectChildrens(id);
-          result = [...direct];
+          result = [...result, ...direct];
           // Find all folders of direct childs
           let innerFolders: childType[] = direct.filter((item: childType) =>
             that.options.isDir(item)
           );
           let innerIds = innerFolders.map((item) => item.id);
-          recurFind(innerIds);
+          if (innerIds?.length) return recurFind(innerIds);
         }
       }
       recurFind([pid]);
