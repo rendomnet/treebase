@@ -20,6 +20,7 @@ type childType = {
 type optionsType = {
   pid: string;
   children: string;
+  isDir: Function;
 };
 
 type initDataType = {
@@ -84,6 +85,7 @@ class TreeBase {
     this.options = {
       pid: "pid",
       children: "children",
+      isDir: null,
       ...(props.options || {}),
     };
     this.data = initData(
@@ -139,8 +141,8 @@ class TreeBase {
   }
 
   private listFromTree(
-    list: childListType,
-    result: childType[] = []
+    list: childTreeType,
+    result: childListType = []
   ): childListType {
     for (let item of list) {
       let children = item[this.options.children];
@@ -169,29 +171,39 @@ class TreeBase {
   }
 
   /**
-   * Get all childrens in flat list
-   * @param id - item id
-   * @returns
+   * GET DEEP CHILDRENS
+   * @param pid - id of parent
+   * @returns - flat list of child items
    */
-  getAllChildren(id: idType): childType[] {
-    let parents = Object.keys(this.data).reduce((result, id) => {
-      let item = this.data[id];
-      if (item.pid) {
-        if (result[item.pid]) {
-          if (!result[item.pid].includes(id))
-            result[item.pid] = [...result[item.pid], id];
-        } else result[item.pid] = [id];
+  getDeepChildren(pid: idType): childType[] {
+    let result = [];
+
+    if (this.options.isDir) {
+      // If isDir is exist
+      (function recurFind(idList: idType[]) {
+        for (const id of idList) {
+          let direct = this.getDirectChildrens(pid);
+          result = [...direct];
+          // Find all folders of direct childs
+          let innerFolders: childType[] = direct.map((item: childType) =>
+            this.options.isDir(item)
+          );
+          let innerIds = innerFolders.map((item) => item.id);
+          recurFind(innerIds);
+        }
+      })([pid]);
+    } else {
+      // If isDir func not exist check manualy
+      for (const id in this.data) {
+        if (this.isDeepParent(id, pid)) {
+          if (!result.includes(id)) {
+            result.push(id);
+          }
+        }
       }
-      return result;
-    }, {});
-
-    if (parents?.[id]) {
-      return parents[id].map((item: idType) => {
-        return { ...this.data[item], id: item };
-      });
+      result = result.map((id) => this.data[id]);
     }
-
-    return [];
+    return result;
   }
 
   /**
