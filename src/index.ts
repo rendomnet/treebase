@@ -186,7 +186,7 @@ class TreeBase {
           let direct = that.getDirectChildrens(id);
           result = [...direct];
           // Find all folders of direct childs
-          let innerFolders: childType[] = direct.map((item: childType) =>
+          let innerFolders: childType[] = direct.filter((item: childType) =>
             that.options.isDir(item)
           );
           let innerIds = innerFolders.map((item) => item.id);
