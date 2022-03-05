@@ -354,7 +354,7 @@ class TreeBase {
 
     // Delete item childrens
     if (!childrenBehavior) {
-      for (const item of this.getAllChildren(id)) {
+      for (const item of this.getDeepChildren(id)) {
         delete this.data[item.id];
       }
     } else if (childrenBehavior === "orphan") {
