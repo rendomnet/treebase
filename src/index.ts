@@ -1,101 +1,26 @@
-function makeId(length: number): itemId {
-  for (
-    var s = "";
-    s.length < length;
-    s +=
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".charAt(
-        (Math.random() * 62) | 0
-      )
-  );
-  return s;
-}
+import {
+  CollectionType,
+  itemId,
+  ItemType,
+  TreeItemType,
+  ItemListType,
+  ItemTreeType,
+  optionsType,
+} from "./types";
 
-interface CollectionType {
-  [P: itemId]: ItemType;
-}
-
-type itemId = string;
-
-type ItemType = {
-  id: itemId;
-  pid: itemId;
-  index?: number;
-  data?: object;
-};
-
-type TreeItemType = {
-  id: itemId;
-  pid: itemId;
-  index?: number;
-  children?: ItemType[];
-  data?: object;
-};
-
-type ItemListType = ItemType[];
-type ItemTreeType = TreeItemType[];
-
-type optionsType = {
-  pid: string;
-  children: string;
-  isDir: Function;
-};
-
-type initCollectionType = {
-  tree: [];
-  collection: object;
-};
-
-export const insert = <T>(arr: T[], index: number, newItem: T): T[] => [
-  ...arr.slice(0, index),
-  newItem,
-  ...arr.slice(index),
-];
-
-function sort(array, property: string) {
-  return array.sort((a: object, b: object) =>
-    a[property] > b[property] ? 1 : -1
-  );
-}
+import { makeId, insert, sort, initCollection, generateId } from "./helpers";
 
 /**
- * Create collection object from tree structured item array
- * @param tree - tree structured item array
- * @param result - initial collection object (default is empty)
- * @returns treebase collection
- */
-function collectionFromTree(
-  tree: ItemTreeType,
-  result = {},
-  options: optionsType
-): CollectionType {
-  for (const originalItem of tree) {
-    let item = { ...originalItem };
-    let children = item[options.children];
-    let pid = item[options.pid];
-
-    delete item[options.children];
-    delete item[options.pid];
-
-    item.pid = pid;
-    if (item.id) {
-      result[item.id] = { ...(result[item.id] || {}), ...item };
-    }
-    if (children) collectionFromTree(children, result, options);
-  }
-  return result;
-}
-
-function initCollection(props: initCollectionType, options: optionsType) {
-  if (props.tree) {
-    return collectionFromTree(props.tree, {}, options);
-  } else return { ...(props.collection || {}) };
-}
-
-/**
- * TREEBASE class
+ * TREEBASE
  */
 class TreeBase {
+  /**
+   * Key value dictionary
+   */
   collection: CollectionType;
+  /**
+   * Options object
+   */
   options: optionsType;
 
   constructor(props: any) {
@@ -103,6 +28,7 @@ class TreeBase {
       pid: "pid",
       children: "children",
       isDir: null,
+      defaultRoot: "root",
       ...(props.options || {}),
     };
     this.collection = initCollection(
@@ -115,7 +41,7 @@ class TreeBase {
   }
 
   /**
-   * Update collection from list items
+   * Update collection object from array of items
    * @param list - list items
    */
   updateCollectionWith(list: ItemListType) {
@@ -124,43 +50,36 @@ class TreeBase {
     }
   }
 
-  generateId(value = 5): string {
-    const newId = makeId(value);
-    if (this.collection[newId]) return this.generateId();
-    return newId;
-    // return Math.max(...(Object.keys(this.props.collection) + 1));
-  }
-
   /**
    * Return sanitized collection object in safe way
    * @param collection
    * @returns
    */
-  private prepareCollection(collection: object) {
+  getCollection(collection: object) {
     let result = {};
     Object.keys(collection).map((id) => {
       result[id] = {
         ...collection?.[id],
-        pid: collection?.[id]?.pid || "root",
+        pid: collection?.[id]?.pid || this.options.defaultRoot,
       };
     });
     return result;
   }
 
   /**
-   * Converts collection object to flat list
+   * Converts collection object to array of items
    * @param collection - collection object
-   * @returns
+   * @returns array - ItemListType
    */
   private collectionToList(collection: CollectionType): ItemListType {
     return Object.keys(collection).map((id) => ({
       ...collection[id],
-      pid: collection[id].pid || "root",
+      pid: collection[id].pid || this.options.defaultRoot,
       id: id,
     }));
   }
 
-  private listFromTree(
+  private treeToList(
     list: ItemTreeType,
     result: ItemListType = []
   ): ItemListType {
@@ -174,7 +93,7 @@ class TreeBase {
       item.pid = pid;
 
       result.push(item);
-      if (children) this.listFromTree(children, result);
+      if (children) this.treeToList(children, result);
     }
     return result;
   }
@@ -229,12 +148,12 @@ class TreeBase {
   }
 
   /**
-   * Get tree of item
+   * Get tree of items
    * @param options - Parameters
    * @returns tree
    */
   getTree(options: { rootId: string; keepIndex: boolean }): ItemTreeType {
-    const { rootId = "root", keepIndex = true } = options;
+    const { rootId = this.options.defaultRoot, keepIndex = true } = options;
     let o = {};
     for (const id in this.collection) {
       const item = this.collection[id];
@@ -246,7 +165,9 @@ class TreeBase {
       o[pid] = o[pid] || {
         ...(o[pid] && o[pid]),
         ...(pid && { id: pid }),
-        ...(o[pid]?.pid ? { pid: o[pid]?.pid } : { pid: "root" }),
+        ...(o[pid]?.pid
+          ? { pid: o[pid]?.pid }
+          : { pid: this.options.defaultRoot }),
       };
 
       if (o[pid]) {
@@ -264,20 +185,23 @@ class TreeBase {
     return [];
   }
 
-  // Methods
-
-  haveChildren(id: itemId) {
+  /**
+   * If item have any childrens
+   * @param id - target item
+   * @returns
+   */
+  haveChildren(id: itemId): boolean {
     if (this.getDirectChildrens(id)?.length > 0) return true;
     return false;
   }
 
   /**
-   * Get all parents of child until root element
+   * Get all parents of child until root item
    * @param id - target child
-   * @param rootId - root element id
+   * @param rootId - root item id
    * @returns - array of parent ids
    */
-  getParents(id: itemId, rootId: itemId = "root"): itemId[] {
+  getParents(id: itemId, rootId: itemId = this.options.defaultRoot): itemId[] {
     let item = this.collection[id];
 
     let result: itemId[] = [];
@@ -306,29 +230,33 @@ class TreeBase {
 
   /**
    * Updates child indexes
-   * @param pid
-   * @param removeId
-   * @param addChild
+   * @param pid - id of root item
+   * @params {add, remove} - remove item while reindex or add item
    * @returns
    */
-  reindexTree(pid: itemId, removeId?: itemId, addChild?: ItemType) {
-    // Reindex siblings
+  reindexDirectChildrens(
+    pid: itemId = this.options.defaultRoot,
+    { remove, add }: { add?: ItemType; remove?: itemId } = {}
+  ) {
+    // Get items
     let childrens = this.getDirectChildrens(pid);
 
-    if (removeId) {
-      // Remove from pid
-      childrens = childrens.filter((item) => item.id !== removeId);
+    // Remove
+    if (remove) childrens = childrens.filter((item) => item.id !== remove);
+
+    // Insert
+    if (add) {
+      let newIndex =
+        add.index !== undefined ? add.index : childrens.length || 0;
+
+      childrens = insert(childrens, newIndex, {
+        ...add,
+        index: newIndex,
+      });
     }
+
     // Sort
     childrens = sort(childrens, "index");
-
-    if (addChild) {
-      // Insert
-      let newIndex =
-        addChild.index !== undefined ? addChild.index : childrens.length || 0;
-
-      childrens = insert(childrens, newIndex, { ...addChild, index: newIndex });
-    }
 
     // Re-index
     this.updateCollectionWith(childrens);
@@ -342,11 +270,11 @@ class TreeBase {
    * @param check - Check if already exists
    * @returns
    */
-  addChild(
+  add(
     payload: { pid: itemId; id: itemId; index?: number },
     check?: { key: string; value: any }
   ) {
-    const { pid = "root", index, id } = payload;
+    const { pid = this.options.defaultRoot, index, id } = payload;
 
     if (check) {
       if (this.checkDuplicates(pid, check.key, check.value))
@@ -357,11 +285,11 @@ class TreeBase {
     const child = {
       ...payload,
       pid,
-      id: id || this.generateId(),
+      id: id || generateId(),
       index,
     };
 
-    this.reindexTree(pid, undefined, child);
+    this.reindexDirectChildrens(pid, { add: child });
 
     return this.collection;
   }
@@ -372,7 +300,7 @@ class TreeBase {
    * @param childrenBehavior - what to do with target childrens
    * @returns
    */
-  removeChild(id: itemId, childrenBehavior?: "save" | "orphan" | undefined) {
+  remove(id: itemId, childrenBehavior?: "save" | "orphan" | undefined) {
     const { pid } = this.collection[id];
 
     // Delete item childrens
@@ -386,20 +314,20 @@ class TreeBase {
       // Move children to orphaned pid
       // Get orphaned items
       if (deletedChildrens.length > 0 && !this.collection.orphaned) {
-        this.addChild({ pid: "root", id: "orphaned" });
+        this.add({ pid: this.options.defaultRoot, id: "orphaned" });
       }
       // Set deleted children to orphaned
       for (const item of deletedChildrens) {
         this.collection[item.id].pid = "orphaned";
       }
 
-      this.reindexTree("orphaned");
+      this.reindexDirectChildrens("orphaned");
     }
 
     delete this.collection[id];
 
     // Reindex siblings
-    this.reindexTree(pid);
+    this.reindexDirectChildrens(pid);
 
     return this.collection;
   }
@@ -410,7 +338,7 @@ class TreeBase {
    * @param payload - new child collection
    * @returns
    */
-  editChild(id: itemId, payload: object) {
+  edit(id: itemId, payload: object) {
     const item = this.collection[id];
     if (!item) this.collection;
     this.collection[id] = { ...item, ...payload, id };
@@ -424,7 +352,7 @@ class TreeBase {
    * @param pid - new parent id
    * @returns
    */
-  moveChild(id: string, newIndex: number, pid?: itemId) {
+  move(id: string, newIndex: number, pid?: itemId) {
     const child = { ...this.collection[id], id: id };
 
     if (pid && pid === id) return this.collection;
@@ -433,15 +361,18 @@ class TreeBase {
 
     // New pid
     if (pid && pid !== child.pid) {
-      this.removeChild(id, "save"); // if parent is moving dont delete children
-      this.addChild({
+      this.remove(id, "save"); // if parent is moving dont delete children
+      this.add({
         ...child,
         pid: pid,
         index: newIndex !== undefined ? newIndex : child.index,
       });
     } else {
       // Reindex siblings
-      this.reindexTree(child.pid, id, { ...child, index: newIndex });
+      this.reindexDirectChildrens(child.pid, {
+        remove: id,
+        add: { ...child, index: newIndex },
+      });
     }
     return this.collection;
   }
