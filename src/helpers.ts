@@ -71,5 +71,12 @@ export function initDictionary(
 ) {
   if (props.tree) {
     return dictionaryFromTree(props.tree, {}, options);
-  } else return { ...(props.dictionary || {}) };
+  } else {
+    for (const id in props.dictionary) {
+      if (typeof props.dictionary[id].pid === undefined) {
+        props.dictionary[id].pid = options.defaultRoot;
+      }
+    }
+    return { ...(props.dictionary || {}) };
+  }
 }
