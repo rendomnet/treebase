@@ -1,4 +1,4 @@
-interface CollectionType {
+interface DictionaryType {
   [P: itemId]: ItemType;
 }
 
@@ -29,18 +29,18 @@ type optionsType = {
   isDir: Function;
 };
 
-type initCollectionType = {
+type initDictionaryType = {
   tree: [];
-  collection: object;
+  dictionary: object;
 };
 
 export {
-  CollectionType,
+  DictionaryType,
   itemId,
   ItemType,
   TreeItemType,
   ItemListType,
   ItemTreeType,
   optionsType,
-  initCollectionType,
+  initDictionaryType,
 };

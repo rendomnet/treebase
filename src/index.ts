@@ -1,5 +1,5 @@
 import {
-  CollectionType,
+  DictionaryType,
   itemId,
   ItemType,
   TreeItemType,
@@ -8,7 +8,7 @@ import {
   optionsType,
 } from "./types";
 
-import { makeId, insert, sort, initCollection, generateId } from "./helpers";
+import { makeId, insert, sort, initDictionary, generateId } from "./helpers";
 
 /**
  * TREEBASE
@@ -17,7 +17,7 @@ class TreeBase {
   /**
    * Key value dictionary
    */
-  collection: CollectionType;
+  dictionary: DictionaryType;
   /**
    * Options object
    */
@@ -31,9 +31,9 @@ class TreeBase {
       defaultRoot: "root",
       ...(props.options || {}),
     };
-    this.collection = initCollection(
+    this.dictionary = initDictionary(
       {
-        collection: props.collection,
+        dictionary: props.dictionary,
         tree: props.tree,
       },
       this.options
@@ -41,40 +41,40 @@ class TreeBase {
   }
 
   /**
-   * Update collection object from array of items
+   * Update dictionary object from array of items
    * @param list - list items
    */
-  updateCollectionWith(list: ItemListType) {
+  updateDictionaryWith(list: ItemListType) {
     for (const [index, item] of list.entries()) {
-      this.collection[item.id] = { ...item, index };
+      this.dictionary[item.id] = { ...item, index };
     }
   }
 
   /**
-   * Return sanitized collection object in safe way
-   * @param collection
+   * Return sanitized dictionary object in safe way
+   * @param dictionary
    * @returns
    */
-  getCollection(collection: object) {
+  getDictionary(dictionary: object) {
     let result = {};
-    Object.keys(collection).map((id) => {
+    Object.keys(dictionary).map((id) => {
       result[id] = {
-        ...collection?.[id],
-        pid: collection?.[id]?.pid || this.options.defaultRoot,
+        ...dictionary?.[id],
+        pid: dictionary?.[id]?.pid || this.options.defaultRoot,
       };
     });
     return result;
   }
 
   /**
-   * Converts collection object to array of items
-   * @param collection - collection object
+   * Converts dictionary object to array of items
+   * @param dictionary - dictionary object
    * @returns array - ItemListType
    */
-  private collectionToList(collection: CollectionType): ItemListType {
-    return Object.keys(collection).map((id) => ({
-      ...collection[id],
-      pid: collection[id].pid || this.options.defaultRoot,
+  private dictionaryToList(dictionary: DictionaryType): ItemListType {
+    return Object.keys(dictionary).map((id) => ({
+      ...dictionary[id],
+      pid: dictionary[id].pid || this.options.defaultRoot,
       id: id,
     }));
   }
@@ -104,7 +104,7 @@ class TreeBase {
    * @returns
    */
   getDirectChildrens(id: itemId): ItemListType {
-    return this.collectionToList(this.collection).filter(
+    return this.dictionaryToList(this.dictionary).filter(
       (item) => String(item.pid) === String(id)
     );
   }
@@ -135,14 +135,14 @@ class TreeBase {
       recurFind([pid]);
     } else {
       // If isDir func not exist check manualy
-      for (const id in this.collection) {
+      for (const id in this.dictionary) {
         if (this.isDeepParent(id, pid)) {
           if (!result.includes(id)) {
             result.push(id);
           }
         }
       }
-      result = result.map((id) => this.collection[id]);
+      result = result.map((id) => this.dictionary[id]);
     }
     return result;
   }
@@ -155,8 +155,8 @@ class TreeBase {
   getTree(options: { rootId: string; keepIndex: boolean }): ItemTreeType {
     const { rootId = this.options.defaultRoot, keepIndex = true } = options;
     let o = {};
-    for (const id in this.collection) {
-      const item = this.collection[id];
+    for (const id in this.dictionary) {
+      const item = this.dictionary[id];
 
       const { pid } = item;
 
@@ -202,7 +202,7 @@ class TreeBase {
    * @returns - array of parent ids
    */
   getParents(id: itemId, rootId: itemId = this.options.defaultRoot): itemId[] {
-    let item = this.collection[id];
+    let item = this.dictionary[id];
 
     let result: itemId[] = [];
     let maxLength = 0;
@@ -210,7 +210,7 @@ class TreeBase {
     while (item && item.pid && maxLength < 10) {
       if (item.pid === rootId) break;
       result.push(item.pid);
-      item = this.collection[item.pid];
+      item = this.dictionary[item.pid];
       maxLength += 1;
     }
 
@@ -259,9 +259,9 @@ class TreeBase {
     childrens = sort(childrens, "index");
 
     // Re-index
-    this.updateCollectionWith(childrens);
+    this.updateDictionaryWith(childrens);
 
-    return this.collection;
+    return this.dictionary;
   }
 
   /**
@@ -278,7 +278,7 @@ class TreeBase {
 
     if (check) {
       if (this.checkDuplicates(pid, check.key, check.value))
-        return this.collection; // Already exisits in pid
+        return this.dictionary; // Already exisits in pid
     }
 
     // Build child
@@ -291,7 +291,7 @@ class TreeBase {
 
     this.reindexDirectChildrens(pid, { add: child });
 
-    return this.collection;
+    return this.dictionary;
   }
 
   /**
@@ -301,48 +301,48 @@ class TreeBase {
    * @returns
    */
   remove(id: itemId, childrenBehavior?: "save" | "orphan" | undefined) {
-    const { pid } = this.collection[id];
+    const { pid } = this.dictionary[id];
 
     // Delete item childrens
     if (!childrenBehavior) {
       for (const item of this.getDeepChildren(id)) {
-        delete this.collection[item.id];
+        delete this.dictionary[item.id];
       }
     } else if (childrenBehavior === "orphan") {
       // Make orphaned
       const deletedChildrens = this.getDirectChildrens(id);
       // Move children to orphaned pid
       // Get orphaned items
-      if (deletedChildrens.length > 0 && !this.collection.orphaned) {
+      if (deletedChildrens.length > 0 && !this.dictionary.orphaned) {
         this.add({ pid: this.options.defaultRoot, id: "orphaned" });
       }
       // Set deleted children to orphaned
       for (const item of deletedChildrens) {
-        this.collection[item.id].pid = "orphaned";
+        this.dictionary[item.id].pid = "orphaned";
       }
 
       this.reindexDirectChildrens("orphaned");
     }
 
-    delete this.collection[id];
+    delete this.dictionary[id];
 
     // Reindex siblings
     this.reindexDirectChildrens(pid);
 
-    return this.collection;
+    return this.dictionary;
   }
 
   /**
    * Edit child object
    * @param id - child id
-   * @param payload - new child collection
+   * @param payload - new child dictionary
    * @returns
    */
   edit(id: itemId, payload: object) {
-    const item = this.collection[id];
-    if (!item) this.collection;
-    this.collection[id] = { ...item, ...payload, id };
-    return this.collection;
+    const item = this.dictionary[id];
+    if (!item) this.dictionary;
+    this.dictionary[id] = { ...item, ...payload, id };
+    return this.dictionary;
   }
 
   /**
@@ -353,11 +353,11 @@ class TreeBase {
    * @returns
    */
   move(id: string, newIndex: number, pid?: itemId) {
-    const child = { ...this.collection[id], id: id };
+    const child = { ...this.dictionary[id], id: id };
 
-    if (pid && pid === id) return this.collection;
+    if (pid && pid === id) return this.dictionary;
 
-    if (pid && this.isDeepParent(pid, id)) return this.collection;
+    if (pid && this.isDeepParent(pid, id)) return this.dictionary;
 
     // New pid
     if (pid && pid !== child.pid) {
@@ -374,7 +374,7 @@ class TreeBase {
         add: { ...child, index: newIndex },
       });
     }
-    return this.collection;
+    return this.dictionary;
   }
 
   checkDuplicates(pid: itemId, key: string, value: any) {

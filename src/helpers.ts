@@ -1,9 +1,9 @@
 import {
   itemId,
   optionsType,
-  CollectionType,
+  DictionaryType,
   ItemTreeType,
-  initCollectionType,
+  initDictionaryType,
 } from "./types";
 
 export function makeId(length: number): itemId {
@@ -32,22 +32,22 @@ export function sort(array, property: string) {
 
 export function generateId(value = 5): string {
   const newId = makeId(value);
-  if (this.collection[newId]) return this.generateId();
+  if (this.dictionary[newId]) return this.generateId();
   return newId;
-  // return Math.max(...(Object.keys(this.props.collection) + 1));
+  // return Math.max(...(Object.keys(this.props.dictionary) + 1));
 }
 
 /**
- * Create collection object from tree structured item array
+ * Create dictionary object from tree structured item array
  * @param tree - tree structured item array
- * @param result - initial collection object (default is empty)
- * @returns treebase collection
+ * @param result - initial dictionary object (default is empty)
+ * @returns treebase dictionary
  */
-export function collectionFromTree(
+export function dictionaryFromTree(
   tree: ItemTreeType,
   result = {},
   options: optionsType
-): CollectionType {
+): DictionaryType {
   for (const originalItem of tree) {
     let item = { ...originalItem };
     let children = item[options.children];
@@ -60,16 +60,16 @@ export function collectionFromTree(
     if (item.id) {
       result[item.id] = { ...(result[item.id] || {}), ...item };
     }
-    if (children) collectionFromTree(children, result, options);
+    if (children) dictionaryFromTree(children, result, options);
   }
   return result;
 }
 
-export function initCollection(
-  props: initCollectionType,
+export function initDictionary(
+  props: initDictionaryType,
   options: optionsType
 ) {
   if (props.tree) {
-    return collectionFromTree(props.tree, {}, options);
-  } else return { ...(props.collection || {}) };
+    return dictionaryFromTree(props.tree, {}, options);
+  } else return { ...(props.dictionary || {}) };
 }
