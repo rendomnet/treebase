@@ -152,13 +152,10 @@ class TreeBase {
    * @param options - Parameters
    * @returns tree
    */
-  getTree({
-    rootId = this.options.defaultRoot,
-    keepIndex = true,
-  }: {
-    rootId: itemId;
-    keepIndex: boolean;
-  }): ItemTreeType {
+  getTree(
+    rootId: itemId = this.options.defaultRoot,
+    keepIndex: boolean = true
+  ): ItemTreeType {
     let o = {};
     for (const id in this.dictionary) {
       const item = this.dictionary[id];
@@ -252,7 +249,7 @@ class TreeBase {
    */
   reindexDirectChildrens(
     pid: itemId = this.options.defaultRoot,
-    { add, remove }: { add?: ItemType; remove?: itemId }
+    { add, remove }: { add?: ItemType; remove?: itemId } = {}
   ) {
     // Get items
     let childrens = this.getDirectChildrens(pid);
