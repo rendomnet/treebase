@@ -257,6 +257,9 @@ class TreeBase {
     // Remove
     if (remove) childrens = childrens.filter((item) => item.id !== remove);
 
+    // Sort
+    childrens = sort(childrens, "index");
+
     // Insert
     if (add) {
       let newIndex =
@@ -267,9 +270,6 @@ class TreeBase {
         index: newIndex,
       });
     }
-
-    // Sort
-    childrens = sort(childrens, "index");
 
     // Re-index
     this.updateDictionaryWith(childrens);
