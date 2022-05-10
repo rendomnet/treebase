@@ -77,7 +77,7 @@ export function initDictionary(
       result[id] = {
         ...props.dictionary[id],
         pid:
-          typeof props.dictionary[id].pid === undefined
+          props.dictionary[id].pid === undefined
             ? options.defaultRoot
             : props.dictionary[id].pid,
       };

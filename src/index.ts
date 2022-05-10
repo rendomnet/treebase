@@ -152,23 +152,39 @@ class TreeBase {
    * @param options - Parameters
    * @returns tree
    */
-  getTree(options: { rootId: string; keepIndex: boolean }): ItemTreeType {
-    const { rootId = this.options.defaultRoot, keepIndex = true } = options;
+  getTree({
+    rootId = this.options.defaultRoot,
+    keepIndex = true,
+  }: {
+    rootId: itemId;
+    keepIndex: boolean;
+  }): ItemTreeType {
     let o = {};
     for (const id in this.dictionary) {
       const item = this.dictionary[id];
 
       const { pid } = item;
 
-      o[id] = o[id] ? { ...o[id], ...item } : { ...item, id, pid };
+      // Fill current
+      o[id] = o[id]
+        ? { ...o[id], ...item }
+        : {
+            ...item,
+            id,
+            pid: pid === undefined ? this.options.defaultRoot : pid,
+          };
 
-      o[pid] = o[pid] || {
-        ...(o[pid] && o[pid]),
-        ...(pid && { id: pid }),
-        ...(o[pid]?.pid
-          ? { pid: o[pid]?.pid }
-          : { pid: this.options.defaultRoot }),
-      };
+      // Fill parent
+      o[pid] =
+        o[pid] !== undefined
+          ? o[pid]
+          : {
+              ...(o[pid] && o[pid]),
+              ...(pid && { id: pid }),
+              ...(o[pid]?.pid
+                ? { pid: o[pid]?.pid }
+                : { pid: this.options.defaultRoot }),
+            };
 
       if (o[pid]) {
         o[pid].children = o[pid].children || [];
@@ -236,7 +252,7 @@ class TreeBase {
    */
   reindexDirectChildrens(
     pid: itemId = this.options.defaultRoot,
-    { remove, add }: { add?: ItemType; remove?: itemId } = {}
+    { add, remove }: { add?: ItemType; remove?: itemId }
   ) {
     // Get items
     let childrens = this.getDirectChildrens(pid);
