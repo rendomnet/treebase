@@ -8,7 +8,7 @@ import {
   optionsType,
 } from "./types";
 
-import { makeId, insert, sort, initDictionary, generateId } from "./helpers";
+import { insert, sort, initDictionary, generateId } from "./helpers";
 
 /**
  * TREEBASE
@@ -284,7 +284,7 @@ class TreeBase {
    * @returns
    */
   add(
-    payload: { pid: itemId; id: itemId; index?: number },
+    payload: { pid?: itemId; id?: itemId; index?: number },
     check?: { key: string; value: any }
   ) {
     const { pid = this.options.defaultRoot, index, id } = payload;
@@ -298,7 +298,7 @@ class TreeBase {
     const child = {
       ...payload,
       pid,
-      id: id || generateId(),
+      id: id || generateId(this.dictionary),
       index,
     };
 
