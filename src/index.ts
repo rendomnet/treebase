@@ -99,7 +99,7 @@ class TreeBase {
   }
 
   /**
-   * Get only direct children of parent
+   * GET DIRECT CHILDS OF ITEM
    * @param id - parent id
    * @returns
    */
@@ -148,9 +148,10 @@ class TreeBase {
   }
 
   /**
-   * Get tree of items
-   * @param options - Parameters
-   * @returns tree
+   * BULLD TREE
+   * @param rootId - root of tree ()
+   * @param keepIndex - put items in their index(can leave empty fields)
+   * @returns
    */
   getTree(
     rootId: itemId = this.options.defaultRoot,
@@ -242,9 +243,9 @@ class TreeBase {
   }
 
   /**
-   * Updates child indexes
+   * UPDATE INDEXES OF ITEMS
    * @param pid - id of root item
-   * @params {add, remove} - remove item while reindex or add item
+   * @params {add, remove} - remove or add item item while reindexing
    * @returns
    */
   reindexDirectChildrens(
@@ -278,16 +279,16 @@ class TreeBase {
   }
 
   /**
-   * Add child item
-   * @param payload - Child object with required (pid,id,index)
+   * ADD ITEM
+   * @param item - Child object
    * @param check - Check if already exists
    * @returns
    */
   add(
-    payload: { pid?: itemId; id?: itemId; index?: number },
+    item: { pid?: itemId; id?: itemId; index?: number },
     check?: { key: string; value: any }
   ) {
-    const { pid = this.options.defaultRoot, index, id } = payload;
+    const { pid = this.options.defaultRoot, index, id } = item;
 
     if (check) {
       if (this.checkDuplicates(pid, check.key, check.value))
@@ -296,7 +297,7 @@ class TreeBase {
 
     // Build child
     const child = {
-      ...payload,
+      ...item,
       pid,
       id: id || generateId(this.dictionary),
       index,
@@ -308,7 +309,7 @@ class TreeBase {
   }
 
   /**
-   * Remove child
+   * REMOVE ITEM
    * @param id - target item id
    * @param childrenBehavior - what to do with target childrens
    * @returns
@@ -346,7 +347,7 @@ class TreeBase {
   }
 
   /**
-   * Edit child object
+   * EDIT ITEM
    * @param id - child id
    * @param payload - new child dictionary
    * @returns
