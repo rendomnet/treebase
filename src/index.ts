@@ -291,11 +291,12 @@ class TreeBase {
     const { pid = this.options.defaultRoot, index, id } = item;
 
     if (check) {
-      if (this.checkDuplicates(pid, check.key, check.value))
-        return this.dictionary; // Already exisits in pid
+      let duplicate = this.checkKeyPropertyExists(pid, check.key, check.value);
+      if (duplicate) return this.dictionary[duplicate.id]; // Already exisits in pid
     }
 
     const childId = id || generateId(this.dictionary);
+
     // Build child
     const childData = {
       ...item,
@@ -392,9 +393,10 @@ class TreeBase {
     return this.dictionary;
   }
 
-  checkDuplicates(pid: itemId, key: string, value: any) {
+  // Check if item with specific key and property exists
+  checkKeyPropertyExists(pid: itemId, key: string, value: any) {
     const childrens = this.getDirectChildrens(pid);
-    return childrens.findIndex((item) => item[key] === value) !== -1;
+    return childrens.find((item) => item[key] === value);
   }
 }
 
