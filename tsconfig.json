@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
-    "module": "commonjs",
-    "target": "ES2015",
+    "outDir": "./lib",
+    "module": "es2020",
+    "target": "esnext",
     "moduleResolution": "node",
     "lib": ["es2017", "es7", "es6", "dom"],
     "declaration": true,
     "esModuleInterop": true
   },
   "include": ["./src"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["./node_modules", "./lib"]
 }
