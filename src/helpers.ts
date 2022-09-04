@@ -6,7 +6,7 @@ import {
   initDictionaryType,
 } from "./types";
 
-export function makeId(length: number): itemId {
+function makeId(length: number): itemId {
   for (
     var s = "";
     s.length < length;
@@ -30,9 +30,12 @@ export function sort(array, property: string) {
   );
 }
 
-export function generateId(value = 5): string {
-  const newId = makeId(value);
-  if (this.dictionary[newId]) return this.generateId();
+export function generateId(
+  dictionary: DictionaryType,
+  length: number = 5
+): string {
+  const newId = makeId(length);
+  if (dictionary[newId]) return generateId(dictionary);
   return newId;
   // return Math.max(...(Object.keys(this.props.dictionary) + 1));
 }
