@@ -295,17 +295,18 @@ class TreeBase {
         return this.dictionary; // Already exisits in pid
     }
 
+    const childId = id || generateId(this.dictionary);
     // Build child
-    const child = {
+    const childData = {
       ...item,
       pid,
-      id: id || generateId(this.dictionary),
+      id: childId,
       index,
     };
 
-    this.reindexDirectChildrens(pid, { add: child });
+    this.reindexDirectChildrens(pid, { add: childData });
 
-    return this.dictionary;
+    return { id, pid, ...childData };
   }
 
   /**
