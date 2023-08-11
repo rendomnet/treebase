@@ -1,46 +1,49 @@
-interface DictionaryType {
-  [P: itemId]: ItemType;
+type ItemId = string;
+
+interface Dictionary {
+  [key: ItemId]: Item;
 }
 
-type itemId = string;
-
-type ItemType = {
-  id: itemId;
-  pid: itemId;
+interface Item {
+  id: ItemId;
+  pid: ItemId;
   index?: number;
-  data?: object;
-};
+  data?: Record<string, unknown>;
+}
 
-type TreeItemType = {
-  id: itemId;
-  pid: itemId;
-  index?: number;
-  children?: ItemType[];
-  data?: object;
-};
+interface TreeItem extends Item {
+  children?: Item[];
+}
 
-type ItemListType = ItemType[];
-type ItemTreeType = TreeItemType[];
+type ItemList = Item[];
+type ItemTree = TreeItem[];
 
-type optionsType = {
-  pid: string;
-  children: string;
-  defaultRoot: string;
-  isDir: Function;
-};
+interface Options {
+  pid: ItemId;
+  children: string; // Children key
+  defaultRoot: string; // Default root id
+  isDir: (item: Item) => boolean;
+}
 
-type initDictionaryType = {
-  tree: [];
-  dictionary: object;
+interface TreeBaseProps {
+  dictionary?: Dictionary;
+  tree?: ItemTree;
+  options?: Options;
+}
+
+type initDictionary = {
+  tree: ItemTree;
+  dictionary: Dictionary;
 };
 
 export {
-  DictionaryType,
-  itemId,
-  ItemType,
-  TreeItemType,
-  ItemListType,
-  ItemTreeType,
-  optionsType,
-  initDictionaryType,
+  Dictionary,
+  ItemId,
+  Item,
+  TreeItem,
+  ItemList,
+  ItemTree,
+  Options,
+  TreeBaseProps,
+  initDictionary,
 };

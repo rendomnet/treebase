@@ -1,12 +1,15 @@
 import {
-  itemId,
-  optionsType,
-  DictionaryType,
-  ItemTreeType,
-  initDictionaryType,
+  Item,
+  ItemId,
+  Options,
+  Dictionary,
+  ItemTree,
+  ItemList,
+  TreeItem,
+  initDictionary,
 } from "./types";
 
-function makeId(length: number): itemId {
+function makeId(length: number): ItemId {
   for (
     var s = "";
     s.length < length;
@@ -24,20 +27,16 @@ export const insert = <T>(arr: T[], index: number, newItem: T): T[] => [
   ...arr.slice(index),
 ];
 
-export function sort(array, property: string) {
-  return array.sort((a: object, b: object) =>
+export function sort(list: ItemList, property: string) {
+  return list.sort((a: object, b: object) =>
     a[property] > b[property] ? 1 : -1
   );
 }
 
-export function generateId(
-  dictionary: DictionaryType,
-  length: number = 5
-): string {
+export function generateId(dictionary: Dictionary, length: number = 5): string {
   const newId = makeId(length);
   if (dictionary[newId]) return generateId(dictionary);
   return newId;
-  // return Math.max(...(Object.keys(this.props.dictionary) + 1));
 }
 
 /**
@@ -47,44 +46,46 @@ export function generateId(
  * @returns treebase dictionary
  */
 export function dictionaryFromTree(
-  tree: ItemTreeType,
-  result = {},
-  options: optionsType
-): DictionaryType {
+  tree: ItemTree,
+  result: Dictionary = {},
+  options: Options
+): Dictionary {
   for (const originalItem of tree) {
-    let item = { ...originalItem };
-    let children = item[options.children];
-    let pid = item[options.pid];
+    let newItem = { ...originalItem };
 
-    delete item[options.children];
-    delete item[options.pid];
+    let children = newItem[options.children];
+    let pid = newItem[options.pid];
 
-    item.pid = pid;
-    if (item.id) {
-      result[item.id] = { ...(result[item.id] || {}), ...item };
+    delete newItem[options.children];
+    delete newItem[options.pid];
+
+    newItem.pid = pid;
+
+    const item: Item = newItem;
+
+    if (newItem.id) {
+      result[item.id] = { ...(result[newItem.id] || {}), ...newItem };
     }
     if (children) dictionaryFromTree(children, result, options);
   }
   return result;
 }
 
-export function initDictionary(
-  props: initDictionaryType,
-  options: optionsType
-) {
+export function initDictionary(props: initDictionary, options: Options) {
   if (props.tree) {
     return dictionaryFromTree(props.tree, {}, options);
-  } else {
-    const result = {};
-    for (const id in props.dictionary) {
-      result[id] = {
-        ...props.dictionary[id],
-        pid:
-          props.dictionary[id].pid === undefined
-            ? options.defaultRoot
-            : props.dictionary[id].pid,
-      };
-    }
-    return { ...(result || {}) };
   }
+
+  const result = {};
+  for (const id in props.dictionary) {
+    result[id] = {
+      ...props.dictionary[id],
+      pid:
+        props.dictionary[id].pid === undefined
+          ? options.defaultRoot
+          : props.dictionary[id].pid,
+    };
+  }
+
+  return result;
 }
