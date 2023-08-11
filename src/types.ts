@@ -8,7 +8,7 @@ interface Item {
   id: ItemId;
   pid: ItemId;
   index?: number;
-  data?: Record<string, unknown>;
+  [key: string]: any;
 }
 
 interface TreeItem extends Item {

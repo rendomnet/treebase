@@ -1,6 +1,12 @@
 # TreeBase
 
-A utility class for manipulating tree structures.
+`Treebase` is a versatile and efficient library designed to manage and manipulate tree structures. With a host of powerful utilities and a straightforward API, working with hierarchical data structures has never been easier.
+
+## Features
+
+- **Easy Manipulation**: Add, remove, update, or move nodes with ease.
+- **Reindexing Support**: Ensure your tree remains organized even after intensive operations.
+- **High Performance**: Optimized for both small and large datasets, ensuring high performance at all times.
 
 ## Installation
 
@@ -12,25 +18,29 @@ npm install treebase
 ## Usage
 
 ```javascript
-import { TreeBase } from "path-to-your-module";
+import { TreeBase } from "treebase";
 
 // Use "dictionary" or "tree" as initial data if "tree" exist dictionary will be ignored
 const props = {
   // USE DICTIONARY
   dictionary: {
-    1: { id: "1", name: "Root Item", pid: "root" },
-    2: { id: "2", name: "Child Item 1", pid: "1" },
-    3: { id: "3", name: "Child Item 2", pid: "1" },
+    1: { id: "1", title: "Root Item", pid: "root" },
+    2: { id: "2", title: "Child Item 1", pid: "1" },
+    3: { id: "3", title: "Child Item 2", pid: "1" },
+    abc: { id: "abc", title: "Child Item 3", pid: "1" },
   },
   // OR TREE
   tree: [
     {
       id: "1",
-      name: "Root Item",
-      pid: "root",
+      title: "Root Item",
       children: [
-        { id: "2", name: "Child Item 1", pid: "1" },
-        { id: "3", name: "Child Item 2", pid: "1" },
+        {
+          id: "2",
+          title: "Child Item 1",
+          children: [{ id: "abc", title: "Child Item 3" }],
+        },
+        { id: "3", title: "Child Item 2" },
       ],
     },
   ],
@@ -43,29 +53,26 @@ const props = {
   },
 };
 
-const tree = new TreeBase(props);
+const treebase = new TreeBase(props);
 
-tree.add({ id: "4", name: "Child Item 3", pid: "1" });
+treebase.add({ id: "4", title: "Child Item 3", pid: "1" });
 
 // tree sctructured data
-let treeData = tree.getTree();
-
+let treeData = treebase.tree;
 // key value dictionary
-let treeDictionary = tree.getDictionary();
+let treeDictionary = treebase.dictionary;
+
+// Get tree of a specific root
+let treeData = treebase.getTree("1");
 
 console.log(treeData, treeDictionary);
 ```
 
+# Result
+
+tree.
+
 ## Methods
-
-### `getDictionary()`
-
-Generates a dictionary from the provided data. Each item in the dictionary is sanitized to ensure it has a valid 'pid'. If an item doesn't have a 'pid', it defaults to 'this.options.defaultRoot'.
-
-- **Parameters**: None
-- **Returns**: The generated dictionary with sanitized items.
-
----
 
 ### `getTree(rootId, keepIndex)`
 
