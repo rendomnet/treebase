@@ -25,7 +25,7 @@ import { TreeBase } from "treebase";
 const props = {
   data: {
     // this can also be tree sctructured data
-    oak: { title: "Root Item", pid: "root" }, //
+    oak: { title: "Oak Item", pid: "root" }, //
     apple: { title: "Apple title", pid: "oak" },
     banana: { title: "Banan title", pid: "oak" },
     cucumber: { title: "Cucumber title", pid: "banana" },
@@ -51,61 +51,53 @@ let treeDictionary = treebase.getDictionary();
 // Get tree of a specific root
 let treeData = treebase.getTree("aa");
 
-console.log(treeData, treeDictionary);
+console.log(treeDictionary, treeData);
 
 // treeDictionary
-// {
-//     // this can also be tree sctructured data
-//     oak: { title: "Root Item", pid: "root" }, //
-//     apple: { title: "Apple title", pid: "oak" },
-//     banana: { title: "Banan title", pid: "oak" },
-//     cucumber: { title: "Cucumber title", pid: "banana" },
-//     watermelon: { title: "Watermelon title", pid: "apple" },
-// }
+{
+    oak: { title: "Oak title", pid: "root" },
+    apple: { title: "Apple title", pid: "oak" },
+    banana: { title: "Banan title", pid: "oak" },
+    cucumber: { title: "Cucumber title", pid: "banana" },
+    watermelon: { title: "Watermelon title", pid: "apple" },
+}
 
 // treeData
-// [
-//   {
-//     id: "root",
-//     title: "Root Item",
-//     pid: "root",
-//     children: [
-//       {
-//         id: "oak",
-//         title: "Oak title",
-//         pid: "root",
-//         children: [
-//           {
-//             id: "apple",
-//             title: "Apple title",
-//             pid: "oak",
-//             children: [
-//               {
-//                 id: "watermelon",
-//                 title: "Watermelon title",
-//                 pid: "apple",
-//                 children: [],
-//               },
-//             ],
-//           },
-//           {
-//             id: "banana",
-//             title: "Banana title",
-//             pid: "oak",
-//             children: [
-//               {
-//                 id: "cucumber",
-//                 title: "Cucumber title",
-//                 pid: "banana",
-//                 children: [],
-//               },
-//             ],
-//           },
-//         ],
-//       },
-//     ],
-//   },
-// ];
+[
+  {
+    id: "oak",
+    title: "Oak title",
+    pid: "root",
+    children: [
+      {
+        id: "apple",
+        title: "Apple title",
+        pid: "oak",
+        children: [
+          {
+            id: "watermelon",
+            title: "Watermelon title",
+            pid: "apple",
+            children: [],
+          },
+        ],
+      },
+      {
+        id: "banana",
+        title: "Banana title",
+        pid: "oak",
+        children: [
+          {
+            id: "cucumber",
+            title: "Cucumber title",
+            pid: "banana",
+            children: [],
+          },
+        ],
+      },
+    ],
+  },
+];
 ```
 
 # Result
