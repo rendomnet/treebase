@@ -25,10 +25,10 @@ import { TreeBase } from "treebase";
 const props = {
   data: {
     // this can also be tree sctructured data
-    aa: { title: "Root Item", pid: "root" }, //
-    ab: { title: "Child Item 1", pid: "1" },
-    ac: { title: "Child Item 2", pid: "1" },
-    abc: { title: "Child Item 3", pid: "2" },
+    oak: { title: "Root Item", pid: "root" }, //
+    apple: { title: "Apple title", pid: "oak" },
+    banana: { title: "Banan title", pid: "oak" },
+    cucumber: { title: "Cucumber title", pid: "banana" },
   },
   // OPTIONS (optional)
   options: {
@@ -41,7 +41,7 @@ const props = {
 
 const treebase = new TreeBase(props);
 
-treebase.add({ title: "Child Item 3", pid: "1" }); // If id is not provided, it will be generated
+treebase.add({ title: "Watermelon title", pid: "apple" }); // If id is not provided, it will be generated
 
 // tree sctructured data
 let treeData = treebase.getTree();
@@ -52,7 +52,62 @@ let treeDictionary = treebase.getDictionary();
 let treeData = treebase.getTree("aa");
 
 console.log(treeData, treeDictionary);
-```
+
+// treeDictionary
+// {
+//     // this can also be tree sctructured data
+//     oak: { title: "Root Item", pid: "root" }, //
+//     apple: { title: "Apple title", pid: "oak" },
+//     banana: { title: "Banan title", pid: "oak" },
+//     cucumber: { title: "Cucumber title", pid: "banana" },
+//     watermelon: { title: "Watermelon title", pid: "apple" },
+// }
+
+
+// treeData
+// [
+//   {
+//     id: "root",
+//     title: "Root Item",
+//     pid: "root",
+//     children: [
+//       {
+//         id: "oak",
+//         title: "Oak title",
+//         pid: "root",
+//         children: [
+//           {
+//             id: "apple",
+//             title: "Apple title",
+//             pid: "oak",
+//             children: [
+//               {
+//                 id: "watermelon",
+//                 title: "Watermelon title",
+//                 pid: "apple",
+//                 children: [],
+//               },
+//             ],
+//           },
+//           {
+//             id: "banana",
+//             title: "Banana title",
+//             pid: "oak",
+//             children: [
+//               {
+//                 id: "cucumber",
+//                 title: "Cucumber title",
+//                 pid: "banana",
+//                 children: [],
+//               },
+//             ],
+//           },
+//         ],
+//       },
+//     ],
+//   },
+// ];
+
 
 # Result
 
@@ -71,7 +126,7 @@ Constructs a hierarchical tree structure starting from the specified root.
 
 ---
 
-### `add(item, check)`
+### `add(item)`
 
 Adds a new item to the tree structure.
 
@@ -186,3 +241,4 @@ Update dictionary object from an array of items.
 - **Parameters**:
   - `list`: list items.
 - **Returns**: None.
+```
