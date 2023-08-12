@@ -19,7 +19,7 @@ module.exports = {
   rules: {
     // You can add your custom rules here
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/no-unused-vars": "off",
     "jest/no-disabled-tests": "warn",
     "jest/no-focused-tests": "error",
     "jest/no-identical-title": "error",

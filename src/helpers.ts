@@ -20,11 +20,16 @@ function makeId(length: number): string {
   return result;
 }
 
-export const insert = <T>(arr: T[], index: number, newItem: T): T[] => [
-  ...arr.slice(0, index),
-  newItem,
-  ...arr.slice(index),
-];
+export const insert = <T>(arr: T[], index: number, newItem: T): T[] => {
+  // Adjust the index to fall within valid boundaries
+  index = Math.max(0, Math.min(index, arr.length));
+
+  // Create a copy of the array to keep things immutable
+  const newArr = arr.slice();
+  newArr.splice(index, 0, newItem);
+
+  return newArr;
+};
 
 export function sort(list: ItemList): ItemList {
   // Sort the list
@@ -35,16 +40,9 @@ export function sort(list: ItemList): ItemList {
   });
 }
 
-export function reorder(list: ItemList): ItemList {
+export function sortReindex(list: ItemList): ItemList {
   // Sort the list
-  return list
-    .slice()
-    .sort((a, b) => {
-      if (a.index === undefined) return 1;
-      if (b.index === undefined) return -1;
-      return a.index - b.index;
-    })
-    .map((item, idx) => ({ ...item, index: idx }));
+  return reindex(sort(list));
 }
 
 export function reindex(list: ItemList): ItemList {
@@ -98,6 +96,7 @@ export function initDictionary(props: initDictionary, options: Options) {
   for (const id in props.dictionary) {
     result[id] = {
       ...props.dictionary[id],
+      id: id !== undefined && id !== null ? String(id) : generateId(result),
       pid:
         props.dictionary[id].pid === undefined
           ? options.defaultRoot

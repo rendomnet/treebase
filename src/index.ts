@@ -12,7 +12,7 @@ import {
 import {
   insert,
   sort,
-  reorder,
+  sortReindex,
   initDictionary,
   generateId,
   reindex,
@@ -140,9 +140,13 @@ class TreeBase {
     if (item.index !== undefined) {
       // Insert child at specified index
       let siblings = this.getDeepChildren(pid);
+      // Sort siblings by index
       siblings = sort(siblings);
+      // Insert child at specified index
       siblings = insert(siblings, childData.index, childData);
+      // Reindex siblings
       siblings = reindex(siblings);
+      // Update dictionary
       this.updateDictionaryFromList(siblings);
     } else {
       this._updateDictionary(childId, childData);
@@ -165,11 +169,10 @@ class TreeBase {
 
     if (!item) throw new Error(`Item with ID ${id} not found.`);
 
-    if (payload.index && payload.index !== item.index)
-      throw new Error("Cannot update index. Use move() instead.");
+    const { index, id: oldId, pid, ...changes } = payload;
 
     // Update the item while ensuring the id remains unchanged
-    this.dictionary[id] = { ...item, ...payload, id };
+    this.dictionary[id] = { ...item, ...changes, id };
 
     return this.dictionary[id];
   }
@@ -250,7 +253,7 @@ class TreeBase {
     let siblings = this.getDeepChildren(pid || oldPid);
 
     // Remove child from siblings if reordering within the same parent
-    if (isReorder && !pid) siblings = siblings.filter((item) => item.id !== id);
+    if (!pid) siblings = siblings.filter((item) => item.id !== id);
 
     // Sort siblings
     siblings = sort(siblings);
@@ -258,7 +261,6 @@ class TreeBase {
     // Add child to siblings
     if (isReorder) siblings = insert(siblings, newIndex, child);
     else siblings.push(child);
-
     siblings = reindex(siblings);
 
     this.updateDictionaryFromList(siblings);
@@ -383,7 +385,7 @@ class TreeBase {
     let children = this.getDirectChildren(pid);
 
     // Sort
-    children = reorder(children);
+    children = sortReindex(children);
 
     // Re-index
     this.updateDictionaryFromList(children);
