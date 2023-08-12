@@ -8,11 +8,13 @@ describe("TreeBase", () => {
     // Setup for each test
     treeBase = new TreeBase({
       dictionary: {
-        1: { id: "1", title: "Root Item", pid: "root" },
-        2: { id: "2", title: "item 2", pid: "1" },
-        3: { id: "3", title: "Inner Item 3", pid: "2" },
+        "1": { title: "Root Item", pid: "root" },
+        "2": { title: "item 2", pid: "1" },
+        "3": { title: "Inner Item 3", pid: "2", index: 0 },
+        a: { title: "Inner Item a", pid: "2", index: 1 },
+        b: { title: "Inner Item b", pid: "2", index: 2 },
+        c: { title: "Inner Item c", pid: "a" },
       },
-      tree: [],
     });
   });
 
@@ -20,6 +22,15 @@ describe("TreeBase", () => {
     it("should return a dictionary", () => {
       const dictionary = treeBase.getDictionary();
       expect(dictionary).toEqual(expect.any(Object));
+    });
+  });
+
+  // Check if dictionary has a default item
+  describe("Default item exist", () => {
+    it("should return a dictionary with a default item", () => {
+      const dictionary = treeBase.getDictionary();
+      // haveProperty and title is "Root Item"
+      expect(dictionary).toHaveProperty("1", { title: "Root Item" });
     });
   });
 
@@ -32,8 +43,12 @@ describe("TreeBase", () => {
 
   describe("add", () => {
     it("should add an item to the tree", () => {
-      const item = { id: "1", name: "Node 1", pid: "root" };
+      const item = { name: "Node 1", pid: "root" };
       const addedItem = treeBase.add(item);
+      const dictionary = treeBase.getDictionary();
+      // expect dictinary have addedItem
+      expect(dictionary).toHaveProperty(addedItem.id);
+      // expect addedItem to be equal to item
       expect(addedItem).toEqual(expect.objectContaining(item));
     });
   });
@@ -62,5 +77,29 @@ describe("TreeBase", () => {
     });
   });
 
-  // ... Add more tests for other methods
+  // move
+  describe("move", () => {
+    it("should move an item to a new parent", () => {
+      const itemId = "1";
+
+      const addedItem = treeBase.add({
+        id: itemId,
+        name: "Node 1",
+        pid: "root",
+      });
+      const movedItem = treeBase.move(addedItem.id, 0, "root");
+      expect(movedItem.pid).toBe("root");
+    });
+  });
+
+  // reorder
+  describe("reorder", () => {
+    it("should reorder an item in the tree", () => {
+      // const reorderedItem = treeBase.move("3", 2);
+      const dictionary = treeBase.getDictionary();
+      console.log("dictionary", dictionary);
+      // console.log("reorderedItem", reorderedItem);
+      // expect(reorderedItem.index).toBe(2);
+    });
+  });
 });

@@ -9,7 +9,14 @@ import {
   TreeBaseProps,
 } from "./types";
 
-import { insert, sort, initDictionary, generateId } from "./helpers";
+import {
+  insert,
+  sort,
+  reorder,
+  initDictionary,
+  generateId,
+  reindex,
+} from "./helpers";
 
 /**
  * Represents a tree structure with CRUD operations and utilities for
@@ -17,7 +24,7 @@ import { insert, sort, initDictionary, generateId } from "./helpers";
  */
 class TreeBase {
   // A flat key-value representation of the tree.
-  private dictionary: Dictionary;
+  dictionary: Dictionary;
 
   // Configuration settings for tree manipulation.
   private options: Options;
@@ -30,6 +37,7 @@ class TreeBase {
       defaultRoot: "root",
       ...(props.options || {}),
     };
+
     this.dictionary = initDictionary(
       {
         dictionary: props.dictionary,
@@ -44,10 +52,11 @@ class TreeBase {
    * is sanitized to ensure it has a valid 'pid'. If an item doesn't have a 'pid',
    * it defaults to 'this.options.defaultRoot'.
    *
-   * @param {Dictionary} dictionary - The input data to transform into a dictionary.
+   * @param {boolean} sanitize - Whether to sanitize the items in the dictionary.
    * @returns {Dictionary} The generated dictionary with sanitized items.
    */
-  getDictionary(): Dictionary {
+  getDictionary(sanitize?: false): Dictionary {
+    if (!sanitize) return this.dictionary;
     const result = Object.keys(this.dictionary).reduce((acc, id) => {
       acc[id] = {
         ...this.dictionary[id],
@@ -78,7 +87,7 @@ class TreeBase {
 
     // Populate tree
     for (const id in this.dictionary) {
-      const item = this.dictionary[id];
+      const item: TreeItem = { ...this.dictionary[id], id: id };
       const pid = item.pid === undefined ? this.options.defaultRoot : item.pid;
 
       // Ensure current item exists in tree
@@ -99,28 +108,24 @@ class TreeBase {
       }
     }
 
-    return tree[rootId]?.children || [];
+    return (tree[rootId]?.children || []) as ItemTree;
   }
 
   // CRUD OPERATIONS
 
   /**
-   * Adds a new item to the tree structure. If specified, checks for duplicates before adding.
+   * Adds a new item to the tree structure.
    *
    * @param {Item} item - The item to be added. It should contain properties relevant to the tree structure
-   *                      such as 'pid' for parent identifier, 'index' for position, and 'id' for unique identification.
-   * @param {Object} [check] - Optional criteria to check for existing duplicates. If an item with the same criteria exists,
-   *                           it will not be added again.
-   * @param {string} check.key - Property key to check against.
-   * @param {any} check.value - Corresponding value to match for the given key.
-   * @returns {Item} Returns the newly added item or the existing item if a duplicate is found based on the check criteria.
+   *                                                   such as 'pid' for parent identifier, 'index' for position. 'id' is optional and will be generated if not provided.
+   * @returns {Item & { id: ItemId }} Returns the newly added item or the existing item if a duplicate is found based on the check criteria.
    */
-  add(item: Item, check?: { key: string; value: any }): Item {
-    const { pid = this.options.defaultRoot, index, id } = item;
+  add(item: Item): Item & { id: ItemId } {
+    const { pid = this.options.defaultRoot, id } = item;
 
-    if (check) {
-      let duplicate = this._checkKeyPropertyExists(pid, check.key, check.value);
-      if (duplicate) return this.dictionary[duplicate.id]; // Already exisits in pid
+    // Check if item already exists
+    if (id && this.dictionary[id]) {
+      return { ...this.dictionary[id], id: id };
     }
 
     const childId = id || generateId(this.dictionary);
@@ -129,12 +134,44 @@ class TreeBase {
     const childData = {
       ...item,
       pid,
-      id: childId,
     };
 
-    this.reindexDirectChildren(pid, { add: childData });
+    // Add child to dictionary
+    if (item.index !== undefined) {
+      // Insert child at specified index
+      let siblings = this.getDeepChildren(pid);
+      siblings = sort(siblings);
+      siblings = insert(siblings, childData.index, childData);
+      siblings = reindex(siblings);
+      this.updateDictionaryFromList(siblings);
+    } else {
+      this._updateDictionary(childId, childData);
+      this.reindexDirectChildren(pid);
+    }
 
-    return { id: childId, pid, ...childData };
+    return { ...this.dictionary[childId], id: childId };
+  }
+
+  /**
+   * Updates properties of a specified item in the tree structure.
+   *
+   * @param {ItemId} id - The unique identifier of the item to be updated.
+   * @param {Partial<Item>} payload - An object containing the properties to be updated.
+   * @returns {Item} Returns the updated item with the new properties.
+   * @throws {Error} Throws an error if the item with the given ID is not found or if the index is changed.
+   */
+  update(id: ItemId, payload: Partial<Item>): Item {
+    const item = this.dictionary[id];
+
+    if (!item) throw new Error(`Item with ID ${id} not found.`);
+
+    if (payload.index && payload.index !== item.index)
+      throw new Error("Cannot update index. Use move() instead.");
+
+    // Update the item while ensuring the id remains unchanged
+    this.dictionary[id] = { ...item, ...payload, id };
+
+    return this.dictionary[id];
   }
 
   /**
@@ -182,64 +219,54 @@ class TreeBase {
   }
 
   /**
-   * Updates properties of a specified item in the tree structure.
-   *
-   * @param {ItemId} id - The unique identifier of the item to be updated.
-   * @param {Partial<Item>} payload - An object containing the properties to be updated.
-   * @returns {Item} Returns the updated item with the new properties.
-   * @throws {Error} Throws an error if the item with the given ID is not found.
-   */
-  update(id: ItemId, payload: Partial<Item>): Item {
-    const item = this.dictionary[id];
-
-    if (!item) throw new Error(`Item with ID ${id} not found.`);
-
-    // Update the item while ensuring the id remains unchanged
-    this.dictionary[id] = { ...item, ...payload, id };
-
-    return this.dictionary[id];
-  }
-
-  /**
    * Moves a child to a different parent or position within the tree structure.
    *
    * @param {ItemId} id - The unique identifier of the child to be moved.
    * @param {number} newIndex - The desired index position under the new or current parent.
    * @param {ItemId} [pid] - Optional. The ID of the new parent. If omitted, the child remains under its current parent but may be reordered.
-   * @returns {Dictionary} Returns the updated dictionary after the move operation.
+   * @returns {Item} Returns the updated item with the new properties.
    * @throws {Error} Throws an error if attempting to move an item to itself or to one of its descendants.
    */
-  move(id: ItemId, newIndex: number, pid?: ItemId): Dictionary {
-    const child = { ...this.dictionary[id], id };
+  move(id: ItemId, newIndex?: number, pid?: ItemId): Item {
+    const oldPid = this.dictionary[id].pid;
+    const child = { ...this.dictionary[id], id, ...(pid ? { pid } : {}) };
 
+    const isReorder = newIndex !== null && newIndex !== undefined;
     // Prevent moving an item to itself
-    if (pid && pid === id) {
+    if (pid === id) {
       console.warn("An item cannot be moved to itself.");
-      return this.dictionary;
+      return this.dictionary[id];
     }
 
     // Prevent moving an item to one of its descendants
     if (pid && this.isDeepParent(pid, id)) {
       console.warn("An item cannot be moved under one of its descendants.");
-      return this.dictionary;
+      return this.dictionary[id];
     }
 
-    // New pid
-    if (pid && pid !== child.pid) {
-      this.remove(id, true); // if parent is moving dont delete children
-      this.add({
-        ...child,
-        pid: pid,
-        index: newIndex !== undefined ? newIndex : child.index,
-      });
-    } else {
-      // Reorder within the same parent
-      this.reindexDirectChildren(child.pid, {
-        remove: id,
-        add: { ...child, index: newIndex },
-      });
-    }
-    return this.dictionary;
+    // Reorder within the same parent
+
+    // Get siblings
+    let siblings = this.getDeepChildren(pid || oldPid);
+
+    // Remove child from siblings if reordering within the same parent
+    if (isReorder && !pid) siblings = siblings.filter((item) => item.id !== id);
+
+    // Sort siblings
+    siblings = sort(siblings);
+
+    // Add child to siblings
+    if (isReorder) siblings = insert(siblings, newIndex, child);
+    else siblings.push(child);
+
+    siblings = reindex(siblings);
+
+    this.updateDictionaryFromList(siblings);
+
+    // Reindex old siblings
+    if (pid) this.reindexDirectChildren(oldPid);
+
+    return this.dictionary[id];
   }
 
   /**
@@ -270,13 +297,13 @@ class TreeBase {
       // If isDir is exist
       const recurFind = (idList: ItemId[]) => {
         for (const id of idList) {
-          let direct = this.getDirectChildren(id);
+          const direct = this.getDirectChildren(id);
           result.push(...direct);
           // Find all folders of direct children
-          let innerFolders = direct.filter((item: Item) =>
+          const innerFolders = direct.filter((item: Item) =>
             this.options.isDir!(item)
           );
-          let innerIds = innerFolders.map((item) => item.id);
+          const innerIds = innerFolders.map((item) => item.id);
           if (innerIds.length) recurFind(innerIds);
         }
       };
@@ -351,33 +378,17 @@ class TreeBase {
    * @param {ItemId} [options.remove] - The unique identifier of the item to be removed during the reindexing process.
    * @returns {Dictionary} The updated dictionary after reindexing the children.
    */
-  reindexDirectChildren(
-    pid: ItemId = this.options.defaultRoot,
-    { add, remove }: { add?: Item; remove?: ItemId } = {}
-  ): Dictionary {
+  reindexDirectChildren(pid: ItemId = this.options.defaultRoot): ItemList {
     // Get items
     let children = this.getDirectChildren(pid);
 
-    // Remove
-    if (remove) children = children.filter((item) => item.id !== remove);
-
     // Sort
-    children = sort(children, "index");
-
-    // Insert
-    if (add) {
-      let newIndex = add.index !== undefined ? add.index : children.length || 0;
-
-      children = insert(children, newIndex, {
-        ...add,
-        index: newIndex,
-      });
-    }
+    children = reorder(children);
 
     // Re-index
     this.updateDictionaryFromList(children);
 
-    return this.dictionary;
+    return children;
   }
 
   /**
@@ -440,6 +451,10 @@ class TreeBase {
       if (children) this._treeToList(children as ItemTree, result);
     }
     return result;
+  }
+
+  private _updateDictionary(id: ItemId, data: Item) {
+    this.dictionary[id] = data;
   }
 }
 

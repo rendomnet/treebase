@@ -1,24 +1,23 @@
 import {
   Item,
-  ItemId,
   Options,
   Dictionary,
   ItemTree,
   ItemList,
-  TreeItem,
   initDictionary,
 } from "./types";
 
-function makeId(length: number): ItemId {
-  for (
-    var s = "";
-    s.length < length;
-    s +=
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".charAt(
-        (Math.random() * 62) | 0
-      )
-  );
-  return s;
+function makeId(length: number): string {
+  const characters =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    result += characters.charAt(randomIndex);
+  }
+
+  return result;
 }
 
 export const insert = <T>(arr: T[], index: number, newItem: T): T[] => [
@@ -27,10 +26,29 @@ export const insert = <T>(arr: T[], index: number, newItem: T): T[] => [
   ...arr.slice(index),
 ];
 
-export function sort(list: ItemList, property: string) {
-  return list.sort((a: object, b: object) =>
-    a[property] > b[property] ? 1 : -1
-  );
+export function sort(list: ItemList): ItemList {
+  // Sort the list
+  return list.sort((a, b) => {
+    if (a.index === undefined) return 1;
+    if (b.index === undefined) return -1;
+    return a.index - b.index;
+  });
+}
+
+export function reorder(list: ItemList): ItemList {
+  // Sort the list
+  return list
+    .slice()
+    .sort((a, b) => {
+      if (a.index === undefined) return 1;
+      if (b.index === undefined) return -1;
+      return a.index - b.index;
+    })
+    .map((item, idx) => ({ ...item, index: idx }));
+}
+
+export function reindex(list: ItemList): ItemList {
+  return list.map((item, idx) => ({ ...item, index: idx }));
 }
 
 export function generateId(dictionary: Dictionary, length: number = 5): string {
@@ -51,10 +69,10 @@ export function dictionaryFromTree(
   options: Options
 ): Dictionary {
   for (const originalItem of tree) {
-    let newItem = { ...originalItem };
+    const newItem = { ...originalItem };
 
-    let children = newItem[options.children];
-    let pid = newItem[options.pid];
+    const children = newItem[options.children];
+    const pid = newItem[options.pid];
 
     delete newItem[options.children];
     delete newItem[options.pid];
