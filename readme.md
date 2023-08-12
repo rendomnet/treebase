@@ -20,27 +20,27 @@ npm install treebase
 ```javascript
 import { TreeBase } from "treebase";
 
-// Use "dictionary" or "tree" as initial data if "tree" exist dictionary will be ignored
+// Use "dictionary" or "tree" as initial data if "tree" exist "dictionary" will be ignored
 const props = {
   // USE DICTIONARY
   dictionary: {
-    1: { id: "1", title: "Root Item", pid: "root" },
-    2: { id: "2", title: "Child Item 1", pid: "1" },
-    3: { id: "3", title: "Child Item 2", pid: "1" },
-    abc: { id: "abc", title: "Child Item 3", pid: "1" },
+    aa: { title: "Root Item", pid: "root" }, // when init we can leave id empty it will be populated from key
+    ab: { title: "Child Item 1", pid: "1" },
+    ac: { title: "Child Item 2", pid: "1" },
+    abc: { title: "Child Item 3", pid: "2" },
   },
   // OR TREE
   tree: [
     {
-      id: "1",
+      id: "aa",
       title: "Root Item",
       children: [
         {
-          id: "2",
+          id: "ab",
           title: "Child Item 1",
           children: [{ id: "abc", title: "Child Item 3" }],
         },
-        { id: "3", title: "Child Item 2" },
+        { id: "ac", title: "Child Item 2" },
       ],
     },
   ],
@@ -87,22 +87,21 @@ Constructs a hierarchical tree structure starting from the specified root.
 
 ### `add(item, check)`
 
-Adds a new item to the tree structure. If specified, checks for duplicates before adding.
+Adds a new item to the tree structure.
 
 - **Parameters**:
   - `item`: The item to be added.
-  - `check`: Optional criteria to check for existing duplicates.
 - **Returns**: The newly added item or the existing item if a duplicate is found.
 
 ---
 
-### `remove(id, saveChildren)`
+### `remove(id, moveChildren?)`
 
 Removes an item from the tree structure.
 
 - **Parameters**:
   - `id`: The ID of the target item to remove.
-  - `saveChildren`: If true, moves children to default root. If given a string (ID), moves children to the specified parent. If false or undefined, deletes children.
+  - `moveChildren`: If true, moves children to default root. If given a string (ID), moves children to the specified parent. If false or undefined, deletes children.
 - **Returns**: Updated dictionary.
 
 ---
@@ -118,14 +117,15 @@ Updates properties of a specified item in the tree structure.
 
 ---
 
-### `move(id, newIndex, pid)`
+### `move(id, {index?, pid?})`
 
 Moves a child to a different parent or position within the tree structure.
 
 - **Parameters**:
+
   - `id`: The unique identifier of the child to be moved.
-  - `newIndex`: The desired index position.
-  - `pid`: Optional. The ID of the new parent.
+  - `options`: An object containing the new index and/or parent ID. If no index is specified, the child will be moved to the end of the list.
+
 - **Returns**: The updated dictionary after the move operation.
 
 ---

@@ -5,7 +5,7 @@ interface Dictionary {
 }
 
 interface Item {
-  id?: ItemId;
+  id: ItemId;
   pid: ItemId;
   index?: number;
   [key: string]: any;

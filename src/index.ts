@@ -180,10 +180,10 @@ class TreeBase {
   /**
    * Removes an item from the tree structure.
    * @param id - The ID of the target item to remove.
-   * @param saveChildren - If true, moves children to default root. If given a string (ID), moves children to the specified parent. If false or undefined, deletes children.
+   * @param moveChildren - If true, moves children to default root. If given a string (ID), moves children to the specified parent. If false or undefined, deletes children.
    * @returns Updated dictionary.
    */
-  remove(id: ItemId, saveChildren?: ItemId | boolean): Dictionary {
+  remove(id: ItemId, moveChildren?: ItemId | boolean): Dictionary {
     const targetItem = this.dictionary[id];
     if (!targetItem) {
       throw new Error(`Item with ID ${id} not found.`);
@@ -191,10 +191,10 @@ class TreeBase {
 
     const { pid } = targetItem;
 
-    if (saveChildren) {
+    if (moveChildren) {
       const targetPid =
-        typeof saveChildren === "string"
-          ? saveChildren
+        typeof moveChildren === "string"
+          ? moveChildren
           : this.options.defaultRoot;
 
       // Move direct children to targetPid
@@ -225,16 +225,18 @@ class TreeBase {
    * Moves a child to a different parent or position within the tree structure.
    *
    * @param {ItemId} id - The unique identifier of the child to be moved.
-   * @param {number} newIndex - The desired index position under the new or current parent.
-   * @param {ItemId} [pid] - Optional. The ID of the new parent. If omitted, the child remains under its current parent but may be reordered.
+   * @param {Object} options - An object containing options to guide the move operation.
+   * @param {number} [options.index] - The desired index position under the new or current parent.
+   * @param {ItemId} [options.pid] - Optional. The ID of the new parent. If omitted, the child remains under its current parent but may be reordered.
    * @returns {Item} Returns the updated item with the new properties.
    * @throws {Error} Throws an error if attempting to move an item to itself or to one of its descendants.
    */
-  move(id: ItemId, newIndex?: number, pid?: ItemId): Item {
+  move(id: ItemId, options: { index?: number; pid?: ItemId } = {}): Item {
+    const { index, pid } = options;
     const oldPid = this.dictionary[id].pid;
     const child = { ...this.dictionary[id], id, ...(pid ? { pid } : {}) };
 
-    const isReorder = newIndex !== null && newIndex !== undefined;
+    const isReorder = index !== null && index !== undefined;
     // Prevent moving an item to itself
     if (pid === id) {
       console.warn("An item cannot be moved to itself.");
@@ -259,7 +261,7 @@ class TreeBase {
     siblings = sort(siblings);
 
     // Add child to siblings
-    if (isReorder) siblings = insert(siblings, newIndex, child);
+    if (isReorder) siblings = insert(siblings, index, child);
     else siblings.push(child);
     siblings = reindex(siblings);
 
@@ -336,10 +338,11 @@ class TreeBase {
    * @param rootId - root item id (default is from options)
    * @returns ItemId[] - array of parent ids
    */
-  getParents(id: ItemId, rootId: ItemId = this.options.defaultRoot): ItemId[] {
+  getParents(id: ItemId, rootId?: ItemId): ItemId[] {
     const result: ItemId[] = [];
     let currentId = id;
     const visitedIds = new Set<ItemId>();
+    if (!rootId) rootId = this.options.defaultRoot;
 
     while (currentId && currentId !== rootId) {
       const parentItem = this.dictionary[currentId];
@@ -375,9 +378,6 @@ class TreeBase {
    * This method ensures that items maintain their relative order when inserting or removing an item. It first fetches the direct children, then processes removals, sorts the items based on index, inserts new items if required, and finally re-indexes the entire list.
    *
    * @param {ItemId} pid - The unique identifier of the parent item whose children are to be reindexed. Defaults to the default root if not provided.
-   * @param {Object} options - Configuration object for adding or removing items during reindexing.
-   * @param {Item} [options.add] - The item to be added during the reindexing process.
-   * @param {ItemId} [options.remove] - The unique identifier of the item to be removed during the reindexing process.
    * @returns {Dictionary} The updated dictionary after reindexing the children.
    */
   reindexDirectChildren(pid: ItemId = this.options.defaultRoot): ItemList {
