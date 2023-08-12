@@ -238,8 +238,13 @@ class TreeBase {
    * @returns {Item} Returns the updated item with the new properties.
    * @throws {Error} Throws an error if attempting to move an item to itself or to one of its descendants.
    */
-  move(id: ItemId, options: { index?: number; pid?: ItemId } = {}): Item {
-    const { index, pid } = options;
+  move(
+    id: ItemId,
+    options: { index: number; pid?: ItemId } | { index?: number; pid: ItemId }
+  ): Item {
+    const index = options?.index || undefined;
+    const pid = options?.pid || undefined;
+
     const oldPid = this.dictionary[id].pid;
     const child = { ...this.dictionary[id], id, ...(pid ? { pid } : {}) };
 

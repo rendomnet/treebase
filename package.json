@@ -1,6 +1,6 @@
 {
   "name": "treebase",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "TreeBase is a class designed to provide a convenient tree structure manipulation using CRUD operations and utility methods",
   "main": "dist/index.js",
   "scripts": {

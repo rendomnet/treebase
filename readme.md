@@ -2,6 +2,8 @@
 
 `Treebase` is a versatile and efficient library designed to manage and manipulate tree structures. With a host of powerful utilities and a straightforward API, working with hierarchical data structures has never been easier.
 
+<img src="https://user-images.githubusercontent.com/18900210/260242268-b2b914db-8d83-4540-bb07-c00126612e18.png" width="300" height="300" />
+
 ## Features
 
 - **Easy Manipulation**: Add, delete, update, or move nodes with ease.
@@ -20,50 +22,34 @@ npm install treebase
 ```javascript
 import { TreeBase } from "treebase";
 
-// Use "dictionary" or "tree" as initial data if "tree" exist "dictionary" will be ignored
 const props = {
-  // USE DICTIONARY
-  dictionary: {
-    aa: { title: "Root Item", pid: "root" }, // when init we can leave id empty it will be populated from key
+  data: {
+    // this can also be tree sctructured data
+    aa: { title: "Root Item", pid: "root" }, //
     ab: { title: "Child Item 1", pid: "1" },
     ac: { title: "Child Item 2", pid: "1" },
     abc: { title: "Child Item 3", pid: "2" },
   },
-  // OR TREE
-  tree: [
-    {
-      id: "aa",
-      title: "Root Item",
-      children: [
-        {
-          id: "ab",
-          title: "Child Item 1",
-          children: [{ id: "abc", title: "Child Item 3" }],
-        },
-        { id: "ac", title: "Child Item 2" },
-      ],
-    },
-  ],
-  // OPTIONS
+  // OPTIONS (optional)
   options: {
-    pid: "pid",
-    children: "children",
-    isDir: null,
-    defaultRoot: "root",
+    pid: "pid", // key for parent id
+    children: "children", // key for children
+    isDir: null, // function to check if item is a directory
+    defaultRoot: "root", // default root id
   },
 };
 
 const treebase = new TreeBase(props);
 
-treebase.add({ id: "4", title: "Child Item 3", pid: "1" });
+treebase.add({ title: "Child Item 3", pid: "1" }); // If id is not provided, it will be generated
 
 // tree sctructured data
-let treeData = treebase.tree;
+let treeData = treebase.getTree();
 // key value dictionary
-let treeDictionary = treebase.dictionary;
+let treeDictionary = treebase.getDictionary();
 
 // Get tree of a specific root
-let treeData = treebase.getTree("1");
+let treeData = treebase.getTree("aa");
 
 console.log(treeData, treeDictionary);
 ```
@@ -95,13 +81,13 @@ Adds a new item to the tree structure.
 
 ---
 
-### `delete(id, moveChildren?)`
+### `delete(id, options?)`
 
 Removes an item from the tree structure.
 
 - **Parameters**:
   - `id`: The ID of the target item to delete.
-  - `moveChildren`: If true, moves children to default root. If given a string (ID), moves children to the specified parent. If false or undefined, deletes children.
+  - `options`: {moveToRoot?, moveTo?} - If `moveToRoot` is set to `true`, the item will be moved to the root of the tree. If `moveTo` is set to the ID of another item, the item will be moved to the specified item's children.
 - **Returns**: Updated dictionary.
 
 ---
@@ -117,14 +103,14 @@ Updates properties of a specified item in the tree structure.
 
 ---
 
-### `move(id, {index?, pid?})`
+### `move(id, options)`
 
 Moves a child to a different parent or position within the tree structure.
 
 - **Parameters**:
 
   - `id`: The unique identifier of the child to be moved.
-  - `options`: An object containing the new index and/or parent ID. If no index is specified, the child will be moved to the end of the list.
+  - `options`: {pid?, index?} - If `pid` is set to the ID of another item, the child will be moved to the specified item's children. If `index` is set to a number, the child will be moved to the specified position within the parent's children.
 
 - **Returns**: The updated dictionary after the move operation.
 

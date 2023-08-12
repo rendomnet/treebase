@@ -1,6 +1,5 @@
 import TreeBase from "../dist/index.js";
 import * as helpers from "../dist/helpers.js";
-// import { describe, expect, beforeEach, it } from "jest";
 
 describe("TreeBase", () => {
   let treeBase: TreeBase;
