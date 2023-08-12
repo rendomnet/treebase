@@ -214,13 +214,12 @@ Checks if an item is a deep parent of another item.
 
 ---
 
-### `reindexDirectChildren(pid, options)`
+### `reindexDirectChildren(pid)`
 
 Re-indexes the direct children of a specified parent item.
 
 - **Parameters**:
   - `pid`: The unique identifier of the parent item.
-  - `options`: Configuration object for adding or removing items.
 - **Returns**: The updated dictionary after reindexing the children.
 
 ---
