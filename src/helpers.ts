@@ -4,7 +4,7 @@ import {
   Dictionary,
   ItemTree,
   ItemList,
-  initDictionary,
+  initData,
 } from "./types";
 
 function makeId(length: number): string {
@@ -87,22 +87,20 @@ export function dictionaryFromTree(
   return result;
 }
 
-export function initDictionary(props: initDictionary, options: Options) {
-  if (props.tree) {
-    return dictionaryFromTree(props.tree, {}, options);
-  }
-
+export function initData(data: initData, options: Options) {
   const result = {};
-  for (const id in props.dictionary) {
-    result[id] = {
-      ...props.dictionary[id],
-      id: id !== undefined && id !== null ? String(id) : generateId(result),
-      pid:
-        props.dictionary[id].pid === undefined
-          ? options.defaultRoot
-          : props.dictionary[id].pid,
-    };
+  if (data === undefined) return result;
+  // if data is array
+  if (Array.isArray(data)) {
+    return dictionaryFromTree(data, {}, options);
+  } else {
+    for (const id in data) {
+      result[id] = {
+        ...data[id],
+        id: id !== undefined && id !== null ? String(id) : generateId(result),
+        pid: data[id].pid === undefined ? options.defaultRoot : data[id].pid,
+      };
+    }
   }
-
   return result;
 }

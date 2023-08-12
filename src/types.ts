@@ -27,15 +27,17 @@ interface Options {
 }
 
 interface TreeBaseProps {
-  dictionary?: Dictionary;
+  dictionary?: {
+    [key: ItemId]: Item;
+  };
+  data: initData;
   tree?: ItemTree;
   options?: Options;
 }
 
-type initDictionary = {
-  tree: ItemTree;
-  dictionary: Dictionary;
-};
+type initData =
+  | ItemTree
+  | { [key: ItemId]: Omit<Item, "id"> & { id?: ItemId } };
 
 export {
   Dictionary,
@@ -46,5 +48,5 @@ export {
   ItemTree,
   Options,
   TreeBaseProps,
-  initDictionary,
+  initData,
 };

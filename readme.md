@@ -4,7 +4,7 @@
 
 ## Features
 
-- **Easy Manipulation**: Add, remove, update, or move nodes with ease.
+- **Easy Manipulation**: Add, delete, update, or move nodes with ease.
 - **Reindexing Support**: Ensure your tree remains organized even after intensive operations.
 - **High Performance**: Optimized for both small and large datasets, ensuring high performance at all times.
 
@@ -95,12 +95,12 @@ Adds a new item to the tree structure.
 
 ---
 
-### `remove(id, moveChildren?)`
+### `delete(id, moveChildren?)`
 
 Removes an item from the tree structure.
 
 - **Parameters**:
-  - `id`: The ID of the target item to remove.
+  - `id`: The ID of the target item to delete.
   - `moveChildren`: If true, moves children to default root. If given a string (ID), moves children to the specified parent. If false or undefined, deletes children.
 - **Returns**: Updated dictionary.
 

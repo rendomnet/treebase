@@ -13,7 +13,7 @@ import {
   insert,
   sort,
   sortReindex,
-  initDictionary,
+  initData,
   generateId,
   reindex,
 } from "./helpers";
@@ -38,13 +38,7 @@ class TreeBase {
       ...(props.options || {}),
     };
 
-    this.dictionary = initDictionary(
-      {
-        dictionary: props.dictionary,
-        tree: props.tree,
-      },
-      this.options
-    );
+    this.dictionary = initData(props.data, this.options);
   }
 
   /**
@@ -120,7 +114,7 @@ class TreeBase {
    *                                                   such as 'pid' for parent identifier, 'index' for position. 'id' is optional and will be generated if not provided.
    * @returns {Item & { id: ItemId }} Returns the newly added item or the existing item if a duplicate is found based on the check criteria.
    */
-  add(item: Item): Item & { id: ItemId } {
+  add(item: Omit<Item, "id"> & { id?: ItemId }): Item & { id: ItemId } {
     const { pid = this.options.defaultRoot, id } = item;
 
     // Check if item already exists
@@ -133,6 +127,7 @@ class TreeBase {
     // Build child
     const childData = {
       ...item,
+      id: childId,
       pid,
     };
 
@@ -143,7 +138,7 @@ class TreeBase {
       // Sort siblings by index
       siblings = sort(siblings);
       // Insert child at specified index
-      siblings = insert(siblings, childData.index, childData);
+      siblings = insert(siblings, item.index, childData);
       // Reindex siblings
       siblings = reindex(siblings);
       // Update dictionary
@@ -179,29 +174,41 @@ class TreeBase {
 
   /**
    * Removes an item from the tree structure.
-   * @param id - The ID of the target item to remove.
+   * @param id - The ID of the target item to delete.
    * @param moveChildren - If true, moves children to default root. If given a string (ID), moves children to the specified parent. If false or undefined, deletes children.
    * @returns Updated dictionary.
    */
-  remove(id: ItemId, moveChildren?: ItemId | boolean): Dictionary {
+  delete(
+    id: ItemId,
+    options: { moveTo?: ItemId; moveToRoot?: boolean } = {}
+  ): Dictionary {
     const targetItem = this.dictionary[id];
+    const { moveTo, moveToRoot } = options;
     if (!targetItem) {
       throw new Error(`Item with ID ${id} not found.`);
     }
 
     const { pid } = targetItem;
 
-    if (moveChildren) {
-      const targetPid =
-        typeof moveChildren === "string"
-          ? moveChildren
-          : this.options.defaultRoot;
+    if (moveToRoot || moveTo) {
+      const targetPid = moveTo || this.options.defaultRoot;
+
+      if (
+        moveTo &&
+        moveTo !== this.options.defaultRoot &&
+        !this.dictionary[targetPid]
+      ) {
+        throw new Error(
+          `Can't move children to non-existent parent ${targetPid}.`
+        );
+      }
 
       // Move direct children to targetPid
       const children = this.getDirectChildren(id);
-      for (const child of children) {
-        child.pid = targetPid;
-      }
+      console.log("children", children);
+      const updatedPid = children.map((item) => ({ ...item, pid: targetPid }));
+      console.log("updatedPid", updatedPid);
+      this.updateDictionaryFromList(updatedPid);
 
       // Reindex children
       this.reindexDirectChildren(targetPid);
@@ -279,10 +286,13 @@ class TreeBase {
    * @param {ItemId} id - The unique identifier of the parent item whose direct children are to be fetched.
    * @returns {ItemList} Returns a list containing all the direct children of the specified parent item.
    */
-  getDirectChildren(id: ItemId): ItemList {
-    return this._dictionaryToList(this.dictionary).filter(
-      (item) => String(item.pid) === String(id)
-    );
+  getDirectChildren(pid: ItemId): ItemList {
+    const result = [];
+    for (const id in this.dictionary) {
+      const item = this.dictionary[id];
+      if (item.pid === pid) result.push({ ...item, id: id });
+    }
+    return result;
   }
 
   /**
@@ -373,7 +383,7 @@ class TreeBase {
   }
 
   /**
-   * Re-indexes the direct children of a specified parent item. The function can also add or remove an item as part of the reindexing process.
+   * Re-indexes the direct children of a specified parent item. The function can also add or delete an item as part of the reindexing process.
    *
    * This method ensures that items maintain their relative order when inserting or removing an item. It first fetches the direct children, then processes removals, sorts the items based on index, inserts new items if required, and finally re-indexes the entire list.
    *

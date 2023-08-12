@@ -8,7 +8,7 @@ describe("TreeBase", () => {
   beforeEach(() => {
     // Setup for each test
     treeBase = new TreeBase({
-      dictionary: {
+      data: {
         "1": { title: "Root Item", pid: "root" },
         "2": { title: "item 2", pid: "1" },
         "3": { title: "Inner Item 3", pid: "2", index: 0 },
@@ -49,7 +49,7 @@ describe("TreeBase", () => {
   });
 
   describe("crud", () => {
-    it("should add an item to the tree", () => {
+    it("should add an item", () => {
       const item = { name: "Node 1", pid: "root" };
       const addedItem = treeBase.add(item);
       const dictionary = treeBase.getDictionary();
@@ -69,16 +69,34 @@ describe("TreeBase", () => {
       expect(dictionary[itemId].title).toBe("renamed");
     });
 
-    it("should remove an item from the tree", () => {
+    it("should delete an item", () => {
       const itemId = "1";
       treeBase.add({ id: itemId, name: "Node 1", pid: "root" });
       const dictionaryBeforeRemoval = treeBase.getDictionary();
 
       expect(dictionaryBeforeRemoval).toHaveProperty(itemId);
-      treeBase.remove(itemId);
+      treeBase.delete(itemId);
 
       const dictionaryAfterRemoval = treeBase.getDictionary();
       expect(dictionaryAfterRemoval).not.toHaveProperty(itemId);
+    });
+
+    it("should delete an item and move children to root", () => {
+      treeBase.delete("2", {
+        moveToRoot: true,
+      });
+
+      const items = treeBase.getTree("root");
+      expect(items).toHaveLength(6);
+    });
+
+    it("should delete an item and move to custom", () => {
+      treeBase.delete("2", {
+        moveTo: "1",
+      });
+
+      const items = treeBase.getTree("1");
+      expect(items).toHaveLength(5);
     });
   });
 
@@ -166,7 +184,7 @@ describe("TreeBase", () => {
   // reorder
   describe("move", () => {
     it("should reorder item", () => {
-      const reorderedItem = treeBase.move("a", 3);
+      const reorderedItem = treeBase.move("a", { index: 3 });
       expect(reorderedItem.index).toBe(3);
       expect(treeBase.dictionary.b.index).toBe(1);
       expect(treeBase.dictionary.e.index).toBe(4);
@@ -180,7 +198,7 @@ describe("TreeBase", () => {
       treeBase.add({ id: "i", pid: "1" });
       const lengthOriginal = treeBase.getTree("1").length;
       const lengthTo = treeBase.getTree("2").length;
-      treeBase.move("f", 2, "2");
+      treeBase.move("f", { index: 2, pid: "2" });
       expect(treeBase.dictionary.d.index).toBe(4);
       // To have length minus 1
       expect(treeBase.getTree("1").length).toBe(lengthOriginal - 1);
