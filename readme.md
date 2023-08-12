@@ -52,7 +52,11 @@ let treeDictionary = treebase.getDictionary();
 let treeData = treebase.getTree("aa");
 
 console.log(treeDictionary, treeData);
+```
 
+# Result
+
+```javascript
 // treeDictionary
 {
     oak: { title: "Oak title", pid: "root" },
@@ -99,10 +103,6 @@ console.log(treeDictionary, treeData);
   },
 ];
 ```
-
-# Result
-
-tree.
 
 ## Methods
 
