@@ -63,7 +63,6 @@ console.log(treeData, treeDictionary);
 //     watermelon: { title: "Watermelon title", pid: "apple" },
 // }
 
-
 // treeData
 // [
 //   {
@@ -107,7 +106,7 @@ console.log(treeData, treeDictionary);
 //     ],
 //   },
 // ];
-
+```
 
 # Result
 
@@ -241,4 +240,7 @@ Update dictionary object from an array of items.
 - **Parameters**:
   - `list`: list items.
 - **Returns**: None.
+
+```
+
 ```
