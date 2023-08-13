@@ -188,6 +188,10 @@ class TreeBase {
       throw new Error(`Item with ID ${id} not found.`);
     }
 
+    if (id === this.options.defaultRoot) {
+      throw new Error(`Cannot delete root item.`);
+    }
+
     const { pid } = targetItem;
 
     if (moveToRoot || moveTo) {
