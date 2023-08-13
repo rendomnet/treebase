@@ -1,6 +1,6 @@
 # TreeBase
 
-`Treebase` is library designed to manage and manipulate tree structures. With a host of powerful utilities and a straightforward API, working with hierarchical data structures has never been easier.
+`Treebase` library designed to manage and manipulate tree structures. With a host of powerful utilities and a straightforward API, working with hierarchical data structures has never been easier.
 
 <img src="https://user-images.githubusercontent.com/18900210/260242268-b2b914db-8d83-4540-bb07-c00126612e18.png" width="300" height="300" />
 
