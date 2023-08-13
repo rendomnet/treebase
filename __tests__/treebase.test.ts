@@ -204,4 +204,19 @@ describe("TreeBase", () => {
       expect(treeBase.getTree("2").length).toBe(lengthTo + 1);
     });
   });
+
+  describe("search", () => {
+    it("search multiple", () => {
+      const searchResult = treeBase.search("title", "Inner Item");
+      expect(searchResult).toHaveLength(6);
+    });
+    it("search single", () => {
+      const searchResult = treeBase.search("title", "Inner Item e");
+      expect(searchResult).toHaveLength(1);
+    });
+    it("search not found", () => {
+      const searchResult = treeBase.search("title", "asdfg");
+      expect(searchResult).toHaveLength(0);
+    });
+  });
 });

@@ -1,14 +1,15 @@
 # TreeBase
 
-`Treebase` is a versatile and efficient library designed to manage and manipulate tree structures. With a host of powerful utilities and a straightforward API, working with hierarchical data structures has never been easier.
+`Treebase` is library designed to manage and manipulate tree structures. With a host of powerful utilities and a straightforward API, working with hierarchical data structures has never been easier.
 
 <img src="https://user-images.githubusercontent.com/18900210/260242268-b2b914db-8d83-4540-bb07-c00126612e18.png" width="300" height="300" />
 
 ## Features
 
 - **Easy Manipulation**: Add, delete, update, or move nodes with ease.
-- **Reindexing Support**: Ensure your tree remains organized even after intensive operations.
-- **High Performance**: Optimized for both small and large datasets, ensuring high performance at all times.
+- **Search**: Search for nodes based on a specific property.
+- **Hierarchical Tree**: Construct a hierarchical tree structure from a flat list of items.
+- **Dictionary**: Get a key-value dictionary of all items in the tree structure.
 
 ## Installation
 
@@ -159,6 +160,17 @@ Moves a child to a different parent or position within the tree structure.
   - `options`: {pid?, index?} - If `pid` is set to the ID of another item, the child will be moved to the specified item's children. If `index` is set to a number, the child will be moved to the specified position within the parent's children.
 
 - **Returns**: The updated dictionary after the move operation.
+
+---
+
+### `search(path, value)`
+
+Search for an item in the tree structure.
+
+- **Parameters**:
+  - `path`: The path to the property to search for.
+  - `value`: The value to search for.
+- **Returns**: A list of items that match the search criteria.
 
 ---
 
