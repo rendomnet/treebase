@@ -212,10 +212,14 @@ class TreeBase {
 
       // Move direct children to targetPid
       const children = this.getDirectChildren(id);
-      console.log("children", children);
-      const updatedPid = children.map((item) => ({ ...item, pid: targetPid }));
-      console.log("updatedPid", updatedPid);
-      this.updateDictionaryFromList(updatedPid);
+
+      // Update pid of children and remove index so they are appended to the end
+      const updatedPidList = children.map(({ index, ...item }) => ({
+        ...item,
+        pid: targetPid,
+      }));
+
+      this.updateDictionaryFromList(updatedPidList);
 
       // Reindex children
       this.reindexDirectChildren(targetPid);
