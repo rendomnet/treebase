@@ -55,6 +55,10 @@ export function generateId(dictionary: Dictionary, length: number = 5): string {
   return newId;
 }
 
+export function getNestedValue(obj: Item, path: string): any {
+  return path.split(".").reduce((acc, part) => acc && acc[part], obj);
+}
+
 /**
  * Create dictionary object from tree structured item array
  * @param tree - tree structured item array

@@ -15,6 +15,7 @@ import {
   sortReindex,
   initData,
   generateId,
+  getNestedValue,
   reindex,
 } from "./helpers";
 
@@ -108,7 +109,7 @@ class TreeBase {
   // CRUD OPERATIONS
 
   /**
-   * Adds a new item to the tree structure.
+   * Adds a new item.
    *
    * @param {Item} item - The item to be added. It should contain properties relevant to the tree structure
    *                                                   such as 'pid' for parent identifier, 'index' for position. 'id' is optional and will be generated if not provided.
@@ -164,6 +165,7 @@ class TreeBase {
 
     if (!item) throw new Error(`Item with ID ${id} not found.`);
 
+    // Prevent changing index and id
     const { index, id: oldId, pid, ...changes } = payload;
 
     // Update the item while ensuring the id remains unchanged
@@ -173,9 +175,10 @@ class TreeBase {
   }
 
   /**
-   * Removes an item from the tree structure.
+   * Delete an item.
    * @param id - The ID of the target item to delete.
    * @param moveChildren - If true, moves children to default root. If given a string (ID), moves children to the specified parent. If false or undefined, deletes children.
+   * @throws {Error} Throws an error if the item with the given ID is not found or if it is the root item.
    * @returns Updated dictionary.
    */
   delete(
@@ -292,7 +295,7 @@ class TreeBase {
   /**
    * Retrieves the direct children of a specified parent item.
    *
-   * @param {ItemId} id - The unique identifier of the parent item whose direct children are to be fetched.
+   * @param {ItemId} pid - The unique identifier of the parent item whose direct children are to be fetched.
    * @returns {ItemList} Returns a list containing all the direct children of the specified parent item.
    */
   getDirectChildren(pid: ItemId): ItemList {
@@ -352,10 +355,11 @@ class TreeBase {
   }
 
   /**
-   * Get all parents of a child until the root item.
-   * @param id - target child
-   * @param rootId - root item id (default is from options)
-   * @returns ItemId[] - array of parent ids
+   * Get an array of parent IDs from a child item up to the root item.
+   *
+   * @param {ItemId} id - The target child item ID.
+   * @param {ItemId} [rootId] - The root item ID (default is taken from options).
+   * @returns {ItemId[]} An array of parent item IDs.
    */
   getParents(id: ItemId, rootId?: ItemId): ItemId[] {
     const result: ItemId[] = [];
@@ -392,9 +396,36 @@ class TreeBase {
   }
 
   /**
-   * Re-indexes the direct children of a specified parent item. The function can also add or delete an item as part of the reindexing process.
+   * Searches for items matching a specified query.
    *
-   * This method ensures that items maintain their relative order when inserting or removing an item. It first fetches the direct children, then processes removals, sorts the items based on index, inserts new items if required, and finally re-indexes the entire list.
+   * @param {string} path - The path to the property to search in.
+   * @param {string} value - The value to search for.
+   * @returns
+   */
+  search(path: string, value: string): Item[] {
+    const matches: { item: Item; ratio: number }[] = [];
+
+    for (const key in this.dictionary) {
+      const item: Item = this.dictionary[key];
+      const nestedValue = getNestedValue(item, path);
+      if (
+        nestedValue &&
+        typeof nestedValue === "string" &&
+        nestedValue.toLowerCase().includes(String(value.toLowerCase()))
+      ) {
+        const ratio = value.length / nestedValue.length;
+        matches.push({ item: item, ratio });
+      }
+    }
+
+    // Sort matches by ratio in descending order (most accurate first)
+    matches.sort((a, b) => b.ratio - a.ratio);
+
+    return matches.map((match) => match.item);
+  }
+
+  /**
+   * Re-indexes the direct children of a specified parent item.
    *
    * @param {ItemId} pid - The unique identifier of the parent item whose children are to be reindexed. Defaults to the default root if not provided.
    * @returns {Dictionary} The updated dictionary after reindexing the children.
@@ -413,16 +444,17 @@ class TreeBase {
   }
 
   /**
-   * Update dictionary object from an array of items
-   * @param list - list items
+   * Update the dictionary object using an array of items. If an item does not have an ID, a new ID will be generated for it.
+   *
+   * @param {ItemList} list - The list of items to update the dictionary with.
+   * @returns {Dictionary} - The updated dictionary.
    */
-  updateDictionaryFromList(list: ItemList): void {
-    for (const [index, item] of list.entries()) {
-      if (item.id != null) {
-        this.dictionary[item.id] = item;
-        this.dictionary[item.id].index = index;
-      }
+  updateDictionaryFromList(list: ItemList): Dictionary {
+    for (const item of list) {
+      const id = item.id || generateId(this.dictionary);
+      this.dictionary[id] = { ...item, id: id };
     }
+    return this.dictionary;
   }
 
   /**
