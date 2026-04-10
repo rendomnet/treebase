@@ -30,6 +30,9 @@ class TreeBase {
   // A map to store parent-child relationships for fast lookups.
   private childrenMap: Map<ItemId, Set<ItemId>> = new Map();
 
+  // A cache for tree structures, mapping rootId + keepIndex to the built tree.
+  private treeCache: Map<string, ItemTree> = new Map();
+
   // Configuration settings for tree manipulation.
   private options: Options;
 
@@ -75,6 +78,13 @@ class TreeBase {
   }
 
   /**
+   * Invalidates the tree cache when data is modified.
+   */
+  private _invalidateCache() {
+    this.treeCache.clear();
+  }
+
+  /**
    * Generates a dictionary from the provided data. Each item in the dictionary
    * is sanitized to ensure it has a valid 'pid'. If an item doesn't have a 'pid',
    * it defaults to 'this.options.defaultRoot'.
@@ -110,35 +120,59 @@ class TreeBase {
     rootId: ItemId = this.options.defaultRoot,
     keepIndex: boolean = true
   ): ItemTree {
-    const buildBranch = (id: ItemId): TreeItem | null => {
+    const cacheKey = `${rootId}-${keepIndex}`;
+    if (this.treeCache.has(cacheKey)) {
+      return this.treeCache.get(cacheKey)!;
+    }
+
+    // Iterative approach using a stack to avoid recursion (stack overflow protection)
+    // We first collect all required nodes and their structure
+    const treeMap: Map<ItemId, TreeItem> = new Map();
+    const stack: ItemId[] = [rootId];
+    const processed: Set<ItemId> = new Set();
+
+    // First pass: Create all TreeItem objects in the branch
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      if (processed.has(id)) continue;
+      processed.add(id);
+
       const item = this.dictionary[id];
-      const treeItem: TreeItem = item 
-        ? { ...item, id, children: [] } 
+      const treeItem: TreeItem = item
+        ? { ...item, id, children: [] }
         : { id, pid: this.options.defaultRoot, children: [] };
       
+      treeMap.set(id, treeItem);
+
       const childIds = this.childrenMap.get(id);
       if (childIds) {
         for (const childId of childIds) {
-          const childBranch = buildBranch(childId);
-          if (childBranch) {
-            const index = childBranch.index;
+          stack.push(childId);
+        }
+      }
+    }
+
+    // Second pass: Link children using the treeMap
+    for (const [id, treeItem] of treeMap) {
+      const childIds = this.childrenMap.get(id);
+      if (childIds) {
+        for (const childId of childIds) {
+          const childTreeItem = treeMap.get(childId);
+          if (childTreeItem) {
+            const index = childTreeItem.index;
             if (keepIndex && index !== undefined) {
-              treeItem.children![index] = childBranch;
+              treeItem.children![index] = childTreeItem;
             } else {
-              treeItem.children!.push(childBranch);
+              treeItem.children!.push(childTreeItem);
             }
           }
         }
       }
+    }
 
-      // If keepIndex is true and there are children, we might have gaps (empty array slots).
-      // We should decide if we want to filter them out or keep them.
-      // The original implementation kept them (implied by tree[pid].children[item.index] = tree[id]).
-      return treeItem;
-    };
-
-    const rootBranch = buildBranch(rootId);
-    return (rootBranch?.children || []) as ItemTree;
+    const result = (treeMap.get(rootId)?.children || []) as ItemTree;
+    this.treeCache.set(cacheKey, result);
+    return result;
   }
 
   // CRUD OPERATIONS
@@ -158,6 +192,7 @@ class TreeBase {
       return { ...this.dictionary[id], id: id };
     }
 
+    this._invalidateCache();
     const childId = id || generateId(this.dictionary);
 
     // Build child
@@ -207,6 +242,7 @@ class TreeBase {
     // Update the item while ensuring the id remains unchanged
     this.dictionary[id] = { ...item, ...changes, id };
 
+    this._invalidateCache();
     return this.dictionary[id];
   }
 
@@ -271,6 +307,7 @@ class TreeBase {
     this._removeFromChildrenMap(pid, id);
     delete this.dictionary[id];
 
+    this._invalidateCache();
     // Reindex siblings
     this.reindexDirectChildren(pid);
 
@@ -337,6 +374,7 @@ class TreeBase {
     // Reindex old siblings
     if (pid) this.reindexDirectChildren(oldPid);
 
+    this._invalidateCache();
     return this.dictionary[id];
   }
 
@@ -489,6 +527,7 @@ class TreeBase {
    * @returns {Dictionary} - The updated dictionary.
    */
   updateDictionaryFromList(list: ItemList): Dictionary {
+    this._invalidateCache();
     for (const item of list) {
       const id = item.id || generateId(this.dictionary);
       const oldPid = this.dictionary[id]?.pid;
