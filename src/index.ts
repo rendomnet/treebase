@@ -50,6 +50,26 @@ class TreeBase {
   }
 
   /**
+   * Synchronizes the internal parent-child maps and invalidates the cache.
+   * Call this method if you have mutated the 'dictionary' object directly
+   * outside of TreeBase methods (e.g., via Vue's v-model or direct assignment).
+   */
+  refresh() {
+    this._initializeChildrenMap();
+    this._invalidateCache();
+  }
+
+  /**
+   * Replaces the entire dictionary with new data and refreshes internal structures.
+   *
+   * @param {initData} data - The new data to be loaded (can be a flat dictionary or a tree).
+   */
+  setData(data: initData) {
+    this.dictionary = initData(data, this.options);
+    this.refresh();
+  }
+
+  /**
    * Initializes the children map from the current dictionary.
    */
   private _initializeChildrenMap() {

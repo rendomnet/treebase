@@ -10,6 +10,7 @@
 - **Search**: Search for nodes based on a specific property.
 - **Hierarchical Tree**: Construct a hierarchical tree structure from a flat list of items.
 - **Dictionary**: Get a key-value dictionary of all items in the tree structure.
+- **Reactive Ready**: Optimized for Proxy-based stores like **Pinia**, **Valtio**, and **MobX**.
 
 ## Installation
 
@@ -53,6 +54,24 @@ let treeDictionary = treebase.getDictionary();
 let treeData = treebase.getTree("aa");
 
 console.log(treeDictionary, treeData);
+```
+
+## Reactive Stores (Pinia, Valtio, MobX)
+
+`TreeBase` is designed to work seamlessly with reactive state management. When using it in stores:
+
+1. **Keep the instance reactive**: Wrap the `TreeBase` instance in a proxy (e.g., `reactive()` or `proxy()`).
+2. **Sync after external mutations**: If you edit the `dictionary` directly, call `refresh()` to update internal maps.
+
+```javascript
+// Pinia/Vue example
+const tb = reactive(new TreeBase({ data }));
+tb.dictionary['id'].title = 'New Title';
+tb.refresh(); // Syncs internal indexes
+
+// Valtio/React example
+const state = proxy({ tb: new TreeBase({ data }) });
+state.tb.add({ title: 'New' }); // Automatic tracking
 ```
 
 # Result
@@ -243,6 +262,25 @@ Update dictionary object from an array of items.
 - **Parameters**:
   - `list`: list items.
 - **Returns**: None.
+ 
+ ---
+ 
+ ### `refresh()`
+ 
+ Synchronizes the internal parent-child maps and invalidates the cache. Use this if you have mutated the dictionary object directly (e.g., in a reactive environment like Vue or Pinia).
+ 
+ - **Returns**: None.
+ 
+ ---
+ 
+ ### `setData(data)`
+ 
+ Replaces the entire dictionary with new data and refreshes internal structures.
+ 
+ - **Parameters**:
+   - `data`: The new data to be loaded (can be a flat dictionary or a tree).
+ - **Returns**: None.
+
 
 ```
 
