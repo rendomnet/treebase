@@ -7,13 +7,14 @@ import {
   ItemTree,
   Options,
   TreeBaseProps,
+  initData,
 } from "./types";
 
 import {
   insert,
   sort,
   sortReindex,
-  initData,
+  initData as initDataHelper,
   generateId,
   getNestedValue,
   reindex,
@@ -45,7 +46,7 @@ class TreeBase {
       ...(props.options || {}),
     };
 
-    this.dictionary = initData(props.data, this.options);
+    this.dictionary = initDataHelper(props.data, this.options);
     this._initializeChildrenMap();
   }
 
@@ -65,7 +66,7 @@ class TreeBase {
    * @param {initData} data - The new data to be loaded (can be a flat dictionary or a tree).
    */
   setData(data: initData) {
-    this.dictionary = initData(data, this.options);
+    this.dictionary = initDataHelper(data, this.options);
     this.refresh();
   }
 
