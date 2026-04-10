@@ -1,5 +1,5 @@
-import TreeBase from "../dist/index.js";
-import * as helpers from "../dist/helpers.js";
+import TreeBase from "../src/index";
+import * as helpers from "../src/helpers";
 
 describe("TreeBase", () => {
   let treeBase: TreeBase;

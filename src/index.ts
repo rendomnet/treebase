@@ -27,6 +27,9 @@ class TreeBase {
   // A flat key-value representation of the tree.
   dictionary: Dictionary;
 
+  // A map to store parent-child relationships for fast lookups.
+  private childrenMap: Map<ItemId, Set<ItemId>> = new Map();
+
   // Configuration settings for tree manipulation.
   private options: Options;
 
@@ -40,6 +43,35 @@ class TreeBase {
     };
 
     this.dictionary = initData(props.data, this.options);
+    this._initializeChildrenMap();
+  }
+
+  /**
+   * Initializes the children map from the current dictionary.
+   */
+  private _initializeChildrenMap() {
+    this.childrenMap.clear();
+    for (const id in this.dictionary) {
+      const pid = this.dictionary[id].pid || this.options.defaultRoot;
+      this._addToChildrenMap(pid, id);
+    }
+  }
+
+  private _addToChildrenMap(pid: ItemId, id: ItemId) {
+    if (!this.childrenMap.has(pid)) {
+      this.childrenMap.set(pid, new Set());
+    }
+    this.childrenMap.get(pid)!.add(id);
+  }
+
+  private _removeFromChildrenMap(pid: ItemId, id: ItemId) {
+    const children = this.childrenMap.get(pid);
+    if (children) {
+      children.delete(id);
+      if (children.size === 0) {
+        this.childrenMap.delete(pid);
+      }
+    }
   }
 
   /**
@@ -78,32 +110,35 @@ class TreeBase {
     rootId: ItemId = this.options.defaultRoot,
     keepIndex: boolean = true
   ): ItemTree {
-    const tree: Record<ItemId, TreeItem> = {};
-
-    // Populate tree
-    for (const id in this.dictionary) {
-      const item: TreeItem = { ...this.dictionary[id], id: id };
-      const pid = item.pid === undefined ? this.options.defaultRoot : item.pid;
-
-      // Ensure current item exists in tree
-      tree[id] = tree[id] || { ...item, id, pid, children: [] };
-
-      // Ensure parent item exists in tree
-      tree[pid] = tree[pid] || {
-        id: pid,
-        pid: this.options.defaultRoot,
-        children: [],
-      };
-
-      // Add current item to parent's children
-      if (keepIndex && item.index !== undefined) {
-        tree[pid].children[item.index] = tree[id];
-      } else {
-        tree[pid].children.push(tree[id]);
+    const buildBranch = (id: ItemId): TreeItem | null => {
+      const item = this.dictionary[id];
+      const treeItem: TreeItem = item 
+        ? { ...item, id, children: [] } 
+        : { id, pid: this.options.defaultRoot, children: [] };
+      
+      const childIds = this.childrenMap.get(id);
+      if (childIds) {
+        for (const childId of childIds) {
+          const childBranch = buildBranch(childId);
+          if (childBranch) {
+            const index = childBranch.index;
+            if (keepIndex && index !== undefined) {
+              treeItem.children![index] = childBranch;
+            } else {
+              treeItem.children!.push(childBranch);
+            }
+          }
+        }
       }
-    }
 
-    return (tree[rootId]?.children || []) as ItemTree;
+      // If keepIndex is true and there are children, we might have gaps (empty array slots).
+      // We should decide if we want to filter them out or keep them.
+      // The original implementation kept them (implied by tree[pid].children[item.index] = tree[id]).
+      return treeItem;
+    };
+
+    const rootBranch = buildBranch(rootId);
+    return (rootBranch?.children || []) as ItemTree;
   }
 
   // CRUD OPERATIONS
@@ -146,6 +181,7 @@ class TreeBase {
       this.updateDictionaryFromList(siblings);
     } else {
       this._updateDictionary(childId, childData);
+      this._addToChildrenMap(pid, childId);
       this.reindexDirectChildren(pid);
     }
 
@@ -226,11 +262,13 @@ class TreeBase {
     } else {
       // Delete deep children
       for (const child of this.getDeepChildren(id)) {
+        this._removeFromChildrenMap(child.pid, child.id);
         delete this.dictionary[child.id];
       }
     }
 
     // Remove the target item
+    this._removeFromChildrenMap(pid, id);
     delete this.dictionary[id];
 
     // Reindex siblings
@@ -259,6 +297,11 @@ class TreeBase {
     const oldPid = this.dictionary[id].pid;
     const child = { ...this.dictionary[id], id, ...(pid ? { pid } : {}) };
 
+    if (pid && pid !== oldPid) {
+      this._removeFromChildrenMap(oldPid, id);
+      this._addToChildrenMap(pid, id);
+    }
+
     const isReorder = index !== null && index !== undefined;
     // Prevent moving an item to itself
     if (pid === id) {
@@ -277,8 +320,8 @@ class TreeBase {
     // Get siblings
     let siblings = this.getDeepChildren(pid || oldPid);
 
-    // Remove child from siblings if reordering within the same parent
-    if (!pid) siblings = siblings.filter((item) => item.id !== id);
+    // Remove child from siblings (important if reordering or if it was already a descendant)
+    siblings = siblings.filter((item) => item.id !== id);
 
     // Sort siblings
     siblings = sort(siblings);
@@ -286,6 +329,7 @@ class TreeBase {
     // Add child to siblings
     if (isReorder) siblings = insert(siblings, index, child);
     else siblings.push(child);
+    
     siblings = reindex(siblings);
 
     this.updateDictionaryFromList(siblings);
@@ -303,10 +347,13 @@ class TreeBase {
    * @returns {ItemList} Returns a list containing all the direct children of the specified parent item.
    */
   getDirectChildren(pid: ItemId): ItemList {
+    const childIds = this.childrenMap.get(pid);
+    if (!childIds) return [];
+
     const result = [];
-    for (const id in this.dictionary) {
+    for (const id of childIds) {
       const item = this.dictionary[id];
-      if (item.pid === pid) result.push({ ...item, id: id });
+      if (item) result.push({ ...item, id: id });
     }
     return result;
   }
@@ -323,29 +370,17 @@ class TreeBase {
   getDeepChildren(pid: ItemId): ItemList {
     const result: ItemList = [];
 
-    if (this.options.isDir) {
-      // If isDir is exist
-      const recurFind = (idList: ItemId[]) => {
-        for (const id of idList) {
-          const direct = this.getDirectChildren(id);
-          result.push(...direct);
-          // Find all folders of direct children
-          const innerFolders = direct.filter((item: Item) =>
-            this.options.isDir!(item)
-          );
-          const innerIds = innerFolders.map((item) => item.id);
-          if (innerIds.length) recurFind(innerIds);
-        }
-      };
-      recurFind([pid]);
-    } else {
-      // If isDir func not exist, check manually
-      for (const id in this.dictionary) {
-        if (this.isDeepParent(id, pid)) {
-          result.push(this.dictionary[id]);
+    const recurFind = (id: ItemId) => {
+      const direct = this.getDirectChildren(id);
+      for (const child of direct) {
+        result.push(child);
+        if (!this.options.isDir || this.options.isDir(child)) {
+          recurFind(child.id);
         }
       }
-    }
+    };
+
+    recurFind(pid);
     return result;
   }
 
@@ -456,6 +491,13 @@ class TreeBase {
   updateDictionaryFromList(list: ItemList): Dictionary {
     for (const item of list) {
       const id = item.id || generateId(this.dictionary);
+      const oldPid = this.dictionary[id]?.pid;
+      if (oldPid && oldPid !== item.pid) {
+        this._removeFromChildrenMap(oldPid, id);
+      }
+      if (item.pid) {
+        this._addToChildrenMap(item.pid, id);
+      }
       this.dictionary[id] = { ...item, id: id };
     }
     return this.dictionary;
