@@ -187,7 +187,50 @@ describe("TreeBase", () => {
       expect(reorderedItem.index).toBe(3);
       expect(treeBase.dictionary.b.index).toBe(1);
       expect(treeBase.dictionary.e.index).toBe(4);
-      expect(treeBase.dictionary.c.index).toBe(5);
+      // "c" is a child of "a", not a sibling, so its index is untouched
+      expect(treeBase.dictionary.c.index).toBeUndefined();
+    });
+
+    it("should move item to index 0", () => {
+      treeBase.move("e", { index: 0 });
+      expect(treeBase.dictionary.e.index).toBe(0);
+      expect(treeBase.dictionary["3"].index).toBe(1);
+    });
+
+    it("should move item to index 0 of another parent", () => {
+      treeBase.add({ id: "f", pid: "1" });
+      treeBase.move("f", { index: 0, pid: "2" });
+      expect(treeBase.dictionary.f.pid).toBe("2");
+      expect(treeBase.dictionary.f.index).toBe(0);
+      expect(treeBase.dictionary["3"].index).toBe(1);
+    });
+
+    it("should not reindex nested children when moving a parent", () => {
+      treeBase.add({ id: "x", pid: "a" });
+      treeBase.move("x", { index: 0 });
+      treeBase.move("a", { index: 0 });
+      expect(treeBase.dictionary.a.index).toBe(0);
+      expect(treeBase.dictionary.x.index).toBe(0);
+      expect(treeBase.dictionary.c.index).toBe(1);
+    });
+
+    it("should keep structure intact when moving under a descendant", () => {
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+      treeBase.move("2", { pid: "c" });
+      warn.mockRestore();
+      expect(treeBase.dictionary["2"].pid).toBe("1");
+      expect(treeBase.getDirectChildren("c")).toHaveLength(0);
+      expect(treeBase.getDirectChildren("1").map((item) => item.id)).toEqual(["2"]);
+    });
+  });
+
+  describe("add at index", () => {
+    it("should not reindex nested children", () => {
+      treeBase.add({ id: "f", pid: "2", index: 0 });
+      expect(treeBase.dictionary.f.index).toBe(0);
+      expect(treeBase.dictionary.a.index).toBe(2);
+      expect(treeBase.dictionary.c.index).toBeUndefined();
+      expect(treeBase.dictionary.c.pid).toBe("a");
     });
 
     it("should move and reorder", () => {

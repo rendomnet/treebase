@@ -226,7 +226,7 @@ class TreeBase {
     // Add child to dictionary
     if (item.index !== undefined) {
       // Insert child at specified index
-      let siblings = this.getDeepChildren(pid);
+      let siblings = this.getDirectChildren(pid);
       // Sort siblings by index
       siblings = sort(siblings);
       // Insert child at specified index
@@ -349,18 +349,9 @@ class TreeBase {
     id: ItemId,
     options: { index: number; pid?: ItemId } | { index?: number; pid: ItemId }
   ): Item {
-    const index = options?.index || undefined;
+    const index = options?.index ?? undefined;
     const pid = options?.pid || undefined;
 
-    const oldPid = this.dictionary[id].pid;
-    const child = { ...this.dictionary[id], id, ...(pid ? { pid } : {}) };
-
-    if (pid && pid !== oldPid) {
-      this._removeFromChildrenMap(oldPid, id);
-      this._addToChildrenMap(pid, id);
-    }
-
-    const isReorder = index !== null && index !== undefined;
     // Prevent moving an item to itself
     if (pid === id) {
       console.warn("An item cannot be moved to itself.");
@@ -373,10 +364,20 @@ class TreeBase {
       return this.dictionary[id];
     }
 
+    const oldPid = this.dictionary[id].pid;
+    const child = { ...this.dictionary[id], id, ...(pid ? { pid } : {}) };
+
+    if (pid && pid !== oldPid) {
+      this._removeFromChildrenMap(oldPid, id);
+      this._addToChildrenMap(pid, id);
+    }
+
+    const isReorder = index !== null && index !== undefined;
+
     // Reorder within the same parent
 
     // Get siblings
-    let siblings = this.getDeepChildren(pid || oldPid);
+    let siblings = this.getDirectChildren(pid || oldPid);
 
     // Remove child from siblings (important if reordering or if it was already a descendant)
     siblings = siblings.filter((item) => item.id !== id);
